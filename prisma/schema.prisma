@@ -62,23 +62,26 @@ enum PaymentStatus {
 }
 
 model User {
-  id             String          @id @default(cuid())
-  name           String
-  email          String          @unique
-  phone          String?
-  role           AccountRole     @default(BOTH)
-  passwordHash   String
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  sessions       Session[]
-  sentShipments  Shipment[]      @relation("ShipmentSender")
-  trips          Trip[]
-  offers         Offer[]
-  photos         ShipmentPhoto[]
-  inspections    Inspection[]
-  statusEvents   StatusEvent[]
-  ratingsGiven   Rating[]        @relation("RatingAuthor")
-  ratingsReceived Rating[]       @relation("RatingTarget")
+  id              String          @id @default(cuid())
+  name            String
+  email           String          @unique
+  phone           String?
+  role            AccountRole     @default(BOTH)
+  passwordHash    String
+  googleSubject   String?         @unique
+  emailVerifiedAt DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  sessions        Session[]
+  sentShipments   Shipment[]      @relation("ShipmentSender")
+  trips           Trip[]
+  offers          Offer[]
+  photos          ShipmentPhoto[]
+  inspections     Inspection[]
+  statusEvents    StatusEvent[]
+  ratingsGiven    Rating[]        @relation("RatingAuthor")
+  ratingsReceived Rating[]        @relation("RatingTarget")
+  chatMessages    ChatMessage[]   @relation("ChatMessageSender")
 }
 
 model Session {
@@ -94,36 +97,37 @@ model Session {
 }
 
 model Shipment {
-  id                    String           @id @default(cuid())
-  refCode               String           @unique
-  senderId              String
-  sender                User             @relation("ShipmentSender", fields: [senderId], references: [id], onDelete: Restrict)
-  fromCity               String
-  toCity                 String
-  weightKg               Decimal          @db.Decimal(8, 2)
-  lengthCm               Decimal          @db.Decimal(8, 2)
-  widthCm                Decimal          @db.Decimal(8, 2)
-  heightCm               Decimal          @db.Decimal(8, 2)
-  category               ShipmentCategory
-  contents               String           @db.Text
+  id                   String           @id @default(cuid())
+  refCode              String           @unique
+  senderId             String
+  sender               User             @relation("ShipmentSender", fields: [senderId], references: [id], onDelete: Restrict)
+  fromCity              String
+  toCity                String
+  weightKg              Decimal          @db.Decimal(8, 2)
+  lengthCm              Decimal          @db.Decimal(8, 2)
+  widthCm               Decimal          @db.Decimal(8, 2)
+  heightCm              Decimal          @db.Decimal(8, 2)
+  category              ShipmentCategory
+  contents              String           @db.Text
   approximateValueSar   Decimal          @db.Decimal(12, 2)
   requestedDeliveryAt   DateTime
   recipientName         String
   recipientPhone        String
-  status                 ShipmentStatus   @default(NEW)
-  qrToken                String           @unique
-  deliveryOtpHash        String?
+  status                ShipmentStatus   @default(NEW)
+  qrToken               String           @unique
+  deliveryOtpHash       String?
   deliveryOtpExpiresAt  DateTime?
-  acceptedOfferId        String?          @unique
-  acceptedOffer          Offer?           @relation("AcceptedOffer", fields: [acceptedOfferId], references: [id], onDelete: SetNull)
-  photos                  ShipmentPhoto[]
-  offers                  Offer[]          @relation("ShipmentOffers")
-  inspection              Inspection?
-  statusEvents            StatusEvent[]
-  payment                 Payment?
-  ratings                 Rating[]
-  createdAt               DateTime         @default(now())
-  updatedAt               DateTime         @updatedAt
+  acceptedOfferId       String?          @unique
+  acceptedOffer         Offer?           @relation("AcceptedOffer", fields: [acceptedOfferId], references: [id], onDelete: SetNull)
+  photos                ShipmentPhoto[]
+  offers                Offer[]          @relation("ShipmentOffers")
+  inspection            Inspection?
+  statusEvents          StatusEvent[]
+  payment               Payment?
+  ratings               Rating[]
+  chatMessages          ChatMessage[]
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
 
   @@index([senderId, status])
   @@index([fromCity, toCity, requestedDeliveryAt])
@@ -182,28 +186,28 @@ model Offer {
 }
 
 model Inspection {
-  id                  String   @id @default(cuid())
-  shipmentId          String   @unique
-  shipment            Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  id                  String    @id @default(cuid())
+  shipmentId          String    @unique
+  shipment            Shipment  @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
   travelerId          String
-  traveler            User     @relation(fields: [travelerId], references: [id], onDelete: Restrict)
+  traveler            User      @relation(fields: [travelerId], references: [id], onDelete: Restrict)
   matchedDescription  Boolean
   matchedPhotos       Boolean
   noProhibitedItems   Boolean
   packageSealed       Boolean
-  notes               String?  @db.Text
-  signedAt            DateTime @default(now())
+  notes               String?   @db.Text
+  signedAt            DateTime  @default(now())
 }
 
 model StatusEvent {
-  id         String         @id @default(cuid())
+  id         String          @id @default(cuid())
   shipmentId String
-  shipment   Shipment       @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  shipment   Shipment        @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
   actorId    String?
-  actor      User?          @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  actor      User?           @relation(fields: [actorId], references: [id], onDelete: SetNull)
   status     ShipmentStatus
   note       String?
-  createdAt  DateTime       @default(now())
+  createdAt  DateTime        @default(now())
 
   @@index([shipmentId, createdAt])
 }
@@ -234,4 +238,17 @@ model Rating {
 
   @@unique([shipmentId, authorId, targetId])
   @@index([targetId])
+}
+
+model ChatMessage {
+  id         String   @id @default(cuid())
+  shipmentId String
+  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  senderId   String
+  sender     User     @relation("ChatMessageSender", fields: [senderId], references: [id], onDelete: Restrict)
+  body       String   @db.VarChar(1000)
+  createdAt  DateTime @default(now())
+
+  @@index([shipmentId, createdAt])
+  @@index([senderId, createdAt])
 }

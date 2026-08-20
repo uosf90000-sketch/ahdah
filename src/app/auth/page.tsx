@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, CheckCircle2, KeyRound, PackageCheck, Plane, ShieldCheck, UserPlus } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
+import { googleOAuthConfigured } from "@/lib/google-oauth";
 import { loginAction, registerAction } from "@/app/actions";
 import { MessageBanner } from "@/components/message-banner";
 import { SubmitButton } from "@/components/submit-button";
@@ -13,6 +14,7 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
   if (await getCurrentUser()) redirect("/dashboard");
   const query = await searchParams;
   const register = query.tab === "register";
+  const googleEnabled = googleOAuthConfigured();
 
   return (
     <div className="page-wrap section-space">
@@ -51,6 +53,16 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
           </div>
 
           <MessageBanner error={query.error} />
+
+          {googleEnabled && (
+            <>
+              <Link href="/auth/google" className="mb-5 flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl border border-slate-300 bg-white px-5 text-sm font-semibold text-ink transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100">
+                <GoogleIcon /> المتابعة باستخدام Google
+              </Link>
+              <div className="mb-5 flex items-center gap-3 text-xs text-slate-400"><span className="h-px flex-1 bg-slate-200" /><span>أو باستخدام البريد</span><span className="h-px flex-1 bg-slate-200" /></div>
+            </>
+          )}
+
           {register ? (
             <form action={registerAction} className="space-y-5">
               <div><label className="label" htmlFor="name">الاسم الكامل</label><input className="input" id="name" name="name" autoComplete="name" required placeholder="مثال: يوسف الصبحي" /></div>
@@ -85,4 +97,15 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
 
 function Feature({ text }: { text: string }) {
   return <li className="flex items-center gap-3"><CheckCircle2 aria-hidden="true" className="shrink-0 text-blue-300" size={18} />{text}</li>;
+}
+
+function GoogleIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
+      <path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.4-.18-2.07H12v3.92h5.38a4.6 4.6 0 0 1-2 3.02v2.55h3.24c1.9-1.75 2.98-4.33 2.98-7.42Z" />
+      <path fill="#34A853" d="M12 22c2.7 0 4.97-.9 6.62-2.35l-3.24-2.55c-.9.6-2.05.96-3.38.96-2.61 0-4.82-1.76-5.61-4.13H3.04v2.62A10 10 0 0 0 12 22Z" />
+      <path fill="#FBBC05" d="M6.39 13.93A6.02 6.02 0 0 1 6.08 12c0-.67.11-1.32.31-1.93V7.45H3.04A10 10 0 0 0 2 12c0 1.61.38 3.13 1.04 4.55l3.35-2.62Z" />
+      <path fill="#EA4335" d="M12 5.94c1.47 0 2.79.51 3.83 1.5l2.87-2.88A9.64 9.64 0 0 0 12 2a10 10 0 0 0-8.96 5.45l3.35 2.62C7.18 7.7 9.39 5.94 12 5.94Z" />
+    </svg>
+  );
 }

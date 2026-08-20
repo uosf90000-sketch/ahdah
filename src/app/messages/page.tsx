@@ -13,7 +13,7 @@ export default async function MessagesPage() {
   const shipments = await db.shipment.findMany({
     where: {
       acceptedOfferId: { not: null },
-      OR: [{ senderId: user.id }, { acceptedOffer: { travelerId: user.id } }],
+      OR: [{ senderId: user.id }, { acceptedOffer: { is: { travelerId: user.id } } }],
     },
     include: {
       sender: { select: { id: true, name: true } },

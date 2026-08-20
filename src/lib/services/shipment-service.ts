@@ -108,7 +108,9 @@ export async function acceptOffer(senderId: string, offerId: string) {
     include: { shipment: true, trip: true },
   });
   if (!offer || offer.shipment.senderId !== senderId) throw new DomainValidationError(["العرض غير موجود أو لا تملك صلاحية قبوله"]);
-  if (![ShipmentStatus.NEW, ShipmentStatus.RECEIVING_OFFERS].includes(offer.shipment.status)) throw new DomainValidationError(["تم حسم هذه الشحنة مسبقًا"]);
+  if (offer.shipment.status !== ShipmentStatus.NEW && offer.shipment.status !== ShipmentStatus.RECEIVING_OFFERS) {
+    throw new DomainValidationError(["تم حسم هذه الشحنة مسبقًا"]);
+  }
   if (offer.status !== OfferStatus.PENDING) throw new DomainValidationError(["هذا العرض لم يعد متاحًا"]);
 
   const reservation = await paymentAdapter.reserve({ shipmentRef: offer.shipment.refCode, amountSar: Number(offer.priceSar) });

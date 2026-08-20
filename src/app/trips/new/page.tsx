@@ -10,6 +10,8 @@ export const metadata = { title: "إضافة رحلة" };
 export default async function NewTripPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   await requireUser();
   const query = await searchParams;
+  // Server-rendered request time defines the earliest valid departure slot.
+  // eslint-disable-next-line react-hooks/purity
   const minDate = new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16);
   return (
     <div className="page-wrap section-space">

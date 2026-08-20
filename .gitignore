@@ -6,5 +6,6 @@ out
 *.log
 .DS_Store
 coverage
+*.tsbuildinfo
 public/uploads
 prisma/dev.db

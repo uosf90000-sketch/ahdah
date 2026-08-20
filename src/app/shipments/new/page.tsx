@@ -8,6 +8,8 @@ export const metadata = { title: "إرسال عُهدة" };
 export default async function NewShipmentPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   await requireUser();
   const query = await searchParams;
+  // Server-rendered request time defines the earliest valid delivery slot.
+  // eslint-disable-next-line react-hooks/purity
   const minDate = new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16);
 
   return (

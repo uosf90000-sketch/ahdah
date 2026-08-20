@@ -17,54 +17,69 @@ export default async function DashboardPage() {
     db.rating.aggregate({ where: { targetId: user.id }, _avg: { score: true }, _count: true }),
   ]);
   const openOffers = sent.reduce((total, shipment) => total + shipment.offers.filter((offer) => offer.status === "PENDING").length, 0);
+
   return (
     <div className="page-wrap section-space">
-      <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-        <div><p className="eyebrow mb-2">مساء الخير، {user.name.split(" ")[0]}</p><h1 className="title">كل عُهدك في مكان واحد</h1></div>
-        <div className="flex gap-3"><Link className="btn-primary" href="/shipments/new"><PackagePlus size={18} /> عُهدة جديدة</Link><Link className="btn-secondary" href="/trips/new"><Plane size={18} /> أضف رحلة</Link></div>
-      </div>
+      <section className="relative overflow-hidden rounded-[2rem] bg-ink p-6 text-white sm:p-8 lg:p-10">
+        <div className="absolute -left-20 -top-24 h-72 w-72 rounded-full bg-palm-600/25 blur-3xl" aria-hidden="true" />
+        <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div>
+            <p className="text-sm font-semibold text-blue-200">مرحبًا، {user.name.split(" ")[0]}</p>
+            <h1 className="mt-2 text-3xl font-bold sm:text-4xl">ماذا تريد أن تنجز اليوم؟</h1>
+            <p className="mt-3 max-w-xl text-sm leading-7 text-slate-300">أرسل عُهدة جديدة أو سجّل رحلتك، وسنتولى مطابقة المسار والموعد والوزن.</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:w-[29rem]">
+            <Link href="/shipments/new" className="group flex min-h-24 items-center gap-4 rounded-3xl bg-white p-4 text-ink transition hover:-translate-y-0.5">
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-palm-50 text-palm-700"><PackagePlus aria-hidden="true" size={23} /></span>
+              <span><strong className="block">إرسال عُهدة</strong><small className="mt-1 block text-slate-500">أنشئ طلب شحن</small></span>
+              <ArrowLeft aria-hidden="true" className="mr-auto text-palm-600 transition group-hover:-translate-x-1" size={19} />
+            </Link>
+            <Link href="/trips/new" className="group flex min-h-24 items-center gap-4 rounded-3xl border border-white/15 bg-white/10 p-4 text-white transition hover:bg-white/15">
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/10 text-blue-200"><Plane aria-hidden="true" size={23} /></span>
+              <span><strong className="block">إضافة رحلة</strong><small className="mt-1 block text-slate-300">استفد من وزنك</small></span>
+              <ArrowLeft aria-hidden="true" className="mr-auto text-blue-200 transition group-hover:-translate-x-1" size={19} />
+            </Link>
+          </div>
+        </div>
+      </section>
 
-      <div className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {[
-          { label: "عُهدي", value: sent.length, Icon: Boxes },
-          { label: "العروض الجديدة", value: openOffers, Icon: Sparkles },
-          { label: "عُهد معي", value: carrying.length, Icon: Scale },
-          { label: "تقييمي", value: receivedRatings._count ? `${receivedRatings._avg.score?.toFixed(1)} / 5` : "جديد", Icon: Star },
-        ].map(({ label, value, Icon }) => (
-          <div className="card !p-4 sm:!p-5" key={label}><Icon className="mb-5 text-palm-600" size={24} /><p className="text-2xl font-black">{value}</p><p className="mt-1 text-xs font-bold text-black/40">{label}</p></div>
-        ))}
-      </div>
+      <section className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="ملخص الحساب">
+        <Metric label="طلبات الشحن" value={sent.length} Icon={Boxes} />
+        <Metric label="العروض الجديدة" value={openOffers} Icon={Sparkles} accent />
+        <Metric label="عُهد أحملها" value={carrying.length} Icon={Scale} />
+        <Metric label="تقييمي" value={receivedRatings._count ? `${receivedRatings._avg.score?.toFixed(1)} / 5` : "جديد"} Icon={Star} />
+      </section>
 
       {carrying.length > 0 && (
-        <section className="card-soft mb-8">
-          <div className="mb-4 flex items-center justify-between"><div><p className="eyebrow">مهمتك الحالية</p><h2 className="mt-1 text-xl font-black">عُهد معك الآن</h2></div><Scale className="text-palm-600" /></div>
+        <section className="mt-6 rounded-3xl border border-blue-200 bg-palm-50 p-5 sm:p-6">
+          <div className="mb-4 flex items-center justify-between"><div><p className="text-xs font-bold text-palm-700">مهمتك الحالية</p><h2 className="mt-1 text-xl font-bold">عُهد معك الآن</h2></div><span className="grid h-11 w-11 place-items-center rounded-2xl bg-white text-palm-700"><Scale aria-hidden="true" size={21} /></span></div>
           <div className="grid gap-3 md:grid-cols-2">
-            {carrying.map((shipment) => <Link href={`/shipments/${shipment.id}`} className="rounded-2xl bg-white p-4 transition hover:-translate-y-0.5" key={shipment.id}><div className="flex items-center justify-between"><strong>{shipment.fromCity} ← {shipment.toCity}</strong><StatusBadge status={shipment.status} /></div><p className="mt-2 text-xs text-black/45">{shipment.refCode} · {shipment.weightKg.toString()} كجم</p></Link>)}
+            {carrying.map((shipment) => <Link href={`/shipments/${shipment.id}`} className="group rounded-2xl border border-blue-100 bg-white p-4 transition hover:border-palm-500" key={shipment.id}><div className="flex items-center justify-between gap-3"><strong>{shipment.fromCity} ← {shipment.toCity}</strong><StatusBadge status={shipment.status} /></div><div className="mt-3 flex items-center justify-between text-xs text-slate-500"><span className="tabular-nums">{shipment.refCode} · {shipment.weightKg.toString()} كجم</span><ArrowLeft aria-hidden="true" className="text-palm-600 transition group-hover:-translate-x-1" size={16} /></div></Link>)}
           </div>
         </section>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[1.15fr_.85fr]">
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1.15fr_.85fr]">
         <section className="card">
-          <div className="mb-5 flex items-center justify-between"><h2 className="text-xl font-black">طلبات الشحن</h2><Link href="/shipments/new" className="text-sm font-bold text-palm-600">إضافة <ArrowLeft className="inline" size={15} /></Link></div>
+          <SectionHeading title="طلبات الشحن" href="/shipments/new" action="طلب جديد" />
           <div className="space-y-3">
             {sent.length ? sent.map((shipment) => (
-              <Link href={`/shipments/${shipment.id}`} key={shipment.id} className="block rounded-2xl border border-black/5 p-4 transition hover:border-palm-100 hover:bg-palm-50/40">
-                <div className="flex items-center justify-between gap-3"><div><strong>{shipment.fromCity} ← {shipment.toCity}</strong><p className="mt-1 text-xs text-black/40">{shipment.refCode} · التسليم {formatDate(shipment.requestedDeliveryAt)}</p></div><StatusBadge status={shipment.status} /></div>
-                <div className="mt-3 flex gap-4 text-xs font-bold text-black/50"><span>{shipment.weightKg.toString()} كجم</span><span>{shipment.offers.filter((offer) => offer.status === "PENDING").length} عروض</span></div>
+              <Link href={`/shipments/${shipment.id}`} key={shipment.id} className="group block rounded-2xl border border-slate-200 p-4 transition hover:border-palm-500 hover:bg-palm-50/40">
+                <div className="flex items-center justify-between gap-3"><div className="min-w-0"><strong className="block truncate">{shipment.fromCity} ← {shipment.toCity}</strong><p className="mt-1 text-xs text-slate-500">{shipment.refCode} · التسليم {formatDate(shipment.requestedDeliveryAt)}</p></div><StatusBadge status={shipment.status} /></div>
+                <div className="mt-3 flex items-center gap-4 text-xs font-semibold text-slate-500"><span>{shipment.weightKg.toString()} كجم</span><span>{shipment.offers.filter((offer) => offer.status === "PENDING").length} عروض</span><ArrowLeft aria-hidden="true" className="mr-auto text-palm-600 transition group-hover:-translate-x-1" size={16} /></div>
               </Link>
             )) : <Empty text="لم تنشئ أي طلب شحن بعد" href="/shipments/new" action="أنشئ أول عُهدة" />}
           </div>
         </section>
 
         <section className="card">
-          <div className="mb-5 flex items-center justify-between"><h2 className="text-xl font-black">رحلاتي</h2><Link href="/trips/new" className="text-sm font-bold text-palm-600">إضافة <ArrowLeft className="inline" size={15} /></Link></div>
+          <SectionHeading title="رحلاتي" href="/trips/new" action="رحلة جديدة" />
           <div className="space-y-3">
             {trips.length ? trips.map((trip) => (
-              <Link href={`/trips/${trip.id}`} key={trip.id} className="block rounded-2xl border border-black/5 p-4 hover:bg-sand-50">
+              <Link href={`/trips/${trip.id}`} key={trip.id} className="group block rounded-2xl border border-slate-200 p-4 transition hover:border-palm-500 hover:bg-palm-50/40">
                 <div className="flex justify-between gap-3"><strong>{trip.fromCity} ← {trip.toCity}</strong><span className="pill">{trip.availableWeightKg.toString()} كجم</span></div>
-                <p className="mt-2 text-xs text-black/45">{trip.airline} · {formatDate(trip.departureAt)}</p>
-                <p className="mt-3 text-xs font-bold text-palm-600">{trip.offers.length} عروض مقدمة</p>
+                <p className="mt-2 text-xs text-slate-500">{trip.airline} · {formatDate(trip.departureAt)}</p>
+                <div className="mt-3 flex items-center justify-between text-xs font-semibold text-palm-700"><span>{trip.offers.length} عروض مقدمة</span><ArrowLeft aria-hidden="true" className="transition group-hover:-translate-x-1" size={16} /></div>
               </Link>
             )) : <Empty text="أضف رحلتك لنبحث عن عُهد مناسبة" href="/trips/new" action="إضافة رحلة" />}
           </div>
@@ -74,6 +89,14 @@ export default async function DashboardPage() {
   );
 }
 
+function Metric({ label, value, Icon, accent = false }: { label: string; value: string | number; Icon: typeof Boxes; accent?: boolean }) {
+  return <div className={`rounded-3xl border p-4 sm:p-5 ${accent ? "border-palm-100 bg-palm-50" : "border-slate-200 bg-white"}`}><div className="flex items-start justify-between gap-3"><span className={`grid h-10 w-10 place-items-center rounded-2xl ${accent ? "bg-white text-palm-700" : "bg-slate-100 text-slate-600"}`}><Icon aria-hidden="true" size={19} /></span><strong className="text-2xl font-bold tabular-nums">{value}</strong></div><p className="mt-4 text-xs font-semibold text-slate-500">{label}</p></div>;
+}
+
+function SectionHeading({ title, href, action }: { title: string; href: string; action: string }) {
+  return <div className="mb-5 flex items-center justify-between gap-4"><h2 className="text-xl font-bold">{title}</h2><Link href={href} className="inline-flex min-h-11 items-center gap-1 rounded-xl px-3 text-sm font-semibold text-palm-700 hover:bg-palm-50">{action}<ArrowLeft aria-hidden="true" size={15} /></Link></div>;
+}
+
 function Empty({ text, href, action }: { text: string; href: string; action: string }) {
-  return <div className="rounded-2xl bg-black/[.025] p-6 text-center"><p className="muted mb-4">{text}</p><Link className="btn-secondary" href={href}>{action}</Link></div>;
+  return <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-7 text-center"><p className="muted mb-4">{text}</p><Link className="btn-secondary" href={href}>{action}</Link></div>;
 }

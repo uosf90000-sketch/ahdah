@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { KeyRound, ShieldCheck, UserPlus } from "lucide-react";
+import { ArrowLeft, CheckCircle2, KeyRound, PackageCheck, Plane, ShieldCheck, UserPlus } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { loginAction, registerAction } from "@/app/actions";
 import { MessageBanner } from "@/components/message-banner";
 import { SubmitButton } from "@/components/submit-button";
+import { PasswordField } from "@/components/password-field";
 
 export const metadata = { title: "الدخول والتسجيل" };
 
@@ -12,24 +13,43 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
   if (await getCurrentUser()) redirect("/dashboard");
   const query = await searchParams;
   const register = query.tab === "register";
+
   return (
     <div className="page-wrap section-space">
-      <div className="mx-auto grid max-w-5xl overflow-hidden rounded-[2.5rem] border border-black/5 bg-white shadow-card lg:grid-cols-[.8fr_1.2fr]">
-        <aside className="bg-ink p-7 text-white sm:p-10">
-          <span className="pill !bg-white/10 !text-white">حساب واحد · دورين</span>
-          <h1 className="mt-6 text-3xl font-black leading-tight">أرسل عُهدتك<br />أو استثمر وزنك المتاح</h1>
-          <p className="mt-4 text-sm leading-7 text-white/55">يمكنك استخدام الحساب نفسه كمرسل ومسافر والتحويل بين الرحلات والعُهد بسهولة.</p>
-          <ul className="mt-8 space-y-4 text-sm font-bold text-white/75">
-            <li className="flex gap-3"><ShieldCheck className="shrink-0 text-palm-500" /> جلسة دخول آمنة ومشفرة</li>
-            <li className="flex gap-3"><ShieldCheck className="shrink-0 text-palm-500" /> لا مشاركة لرقم المستلم علنًا</li>
-            <li className="flex gap-3"><ShieldCheck className="shrink-0 text-palm-500" /> كل تغيير مسجل في رحلة العُهدة</li>
-          </ul>
-        </aside>
-        <section className="p-6 sm:p-10">
-          <div className="mb-7 flex rounded-2xl bg-black/[.035] p-1.5">
-            <Link href="/auth?tab=login" className={`flex-1 rounded-xl px-4 py-3 text-center text-sm font-black ${!register ? "bg-white text-palm-700 shadow" : "text-black/45"}`}>تسجيل الدخول</Link>
-            <Link href="/auth?tab=register" className={`flex-1 rounded-xl px-4 py-3 text-center text-sm font-black ${register ? "bg-white text-palm-700 shadow" : "text-black/45"}`}>حساب جديد</Link>
+      <div className="mx-auto grid max-w-5xl overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-card lg:grid-cols-[.9fr_1.1fr]">
+        <aside className="order-2 relative overflow-hidden bg-ink p-7 text-white sm:p-10 lg:order-1">
+          <div className="absolute -bottom-24 -left-20 h-72 w-72 rounded-full bg-palm-600/25 blur-3xl" aria-hidden="true" />
+          <div className="relative">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-semibold text-blue-100"><ShieldCheck aria-hidden="true" size={15} /> حساب واحد للدورين</span>
+            <h1 className="mt-6 max-w-sm text-3xl font-bold leading-[1.45]">أرسل عُهدتك، أو سجّل رحلتك ووزنك المتاح.</h1>
+            <p className="mt-4 max-w-sm text-sm leading-7 text-slate-300">لا تحتاج إلى حسابين. يمكنك التحول بين دور المرسل والمسافر في أي وقت.</p>
+            <ul className="mt-8 space-y-4 text-sm text-slate-200">
+              <Feature text="تفاصيل وصور العُهدة قبل قبولها" />
+              <Feature text="سجل فحص وحالات واضح للطرفين" />
+              <Feature text="تسليم نهائي موثق برمز آمن" />
+            </ul>
+            <div className="mt-10 rounded-3xl border border-white/10 bg-white/[.06] p-5">
+              <div className="flex items-center gap-3">
+                <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white text-ink"><PackageCheck aria-hidden="true" size={22} /></span>
+                <div><p className="font-semibold">جدة <ArrowLeft aria-hidden="true" className="mx-1 inline" size={15} /> الرياض</p><p className="mt-1 text-xs text-slate-400">عُهدة مفحوصة · تسليم مؤكد</p></div>
+                <Plane aria-hidden="true" className="mr-auto text-blue-300" size={22} />
+              </div>
+            </div>
           </div>
+        </aside>
+
+        <section className="order-1 p-6 sm:p-10 lg:order-2">
+          <div className="mb-7">
+            <p className="text-sm font-semibold text-palm-700">مرحبًا بك في عُهدة</p>
+            <h2 className="mt-2 text-3xl font-bold">{register ? "أنشئ حسابك" : "سجّل الدخول"}</h2>
+            <p className="mt-2 text-sm leading-7 text-slate-500">{register ? "ابدأ كمرسل ومسافر من الحساب نفسه." : "أدخل بياناتك للعودة إلى عُهدك ورحلاتك."}</p>
+          </div>
+
+          <div className="mb-7 grid grid-cols-2 rounded-2xl bg-slate-100 p-1.5" role="tablist" aria-label="الدخول أو التسجيل">
+            <Link href="/auth?tab=login" role="tab" aria-selected={!register} className={`min-h-11 rounded-xl px-4 py-3 text-center text-sm font-semibold transition ${!register ? "bg-white text-palm-700 shadow-sm" : "text-slate-500 hover:text-ink"}`}>تسجيل الدخول</Link>
+            <Link href="/auth?tab=register" role="tab" aria-selected={register} className={`min-h-11 rounded-xl px-4 py-3 text-center text-sm font-semibold transition ${register ? "bg-white text-palm-700 shadow-sm" : "text-slate-500 hover:text-ink"}`}>حساب جديد</Link>
+          </div>
+
           <MessageBanner error={query.error} />
           {register ? (
             <form action={registerAction} className="space-y-5">
@@ -38,22 +58,31 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
                 <div><label className="label" htmlFor="register-email">البريد الإلكتروني</label><input className="input" id="register-email" type="email" name="email" autoComplete="email" required placeholder="you@example.com" dir="ltr" /></div>
                 <div><label className="label" htmlFor="phone">رقم الجوال</label><input className="input" id="phone" name="phone" autoComplete="tel" inputMode="tel" placeholder="05xxxxxxxx" dir="ltr" /></div>
               </div>
-              <div><label className="label" htmlFor="role">استخدام الحساب</label><select className="select" id="role" name="role" defaultValue="BOTH"><option value="BOTH">مرسل ومسافر</option><option value="SENDER">مرسل غالبًا</option><option value="TRAVELER">مسافر غالبًا</option></select></div>
-              <div><label className="label" htmlFor="register-password">كلمة المرور</label><input className="input" id="register-password" type="password" name="password" autoComplete="new-password" minLength={8} required /></div>
-              <SubmitButton className="btn-primary w-full" pendingText="جاري إنشاء الحساب..."><UserPlus size={18} /> إنشاء الحساب</SubmitButton>
+              <div>
+                <label className="label" htmlFor="role">كيف ستستخدم عُهدة؟</label>
+                <select className="select" id="role" name="role" defaultValue="BOTH" aria-describedby="role-help">
+                  <option value="BOTH">مرسل ومسافر — موصى به</option>
+                  <option value="SENDER">مرسل غالبًا</option>
+                  <option value="TRAVELER">مسافر / موصل غالبًا</option>
+                </select>
+                <p id="role-help" className="mt-2 text-xs leading-6 text-slate-500">يمكنك استخدام جميع الوظائف مهما كان اختيارك.</p>
+              </div>
+              <PasswordField id="register-password" name="password" label="كلمة المرور" autoComplete="new-password" minLength={8} help="8 أحرف على الأقل" />
+              <SubmitButton className="btn-primary w-full" pendingText="جاري إنشاء الحساب..."><UserPlus aria-hidden="true" size={18} /> إنشاء الحساب</SubmitButton>
             </form>
           ) : (
             <form action={loginAction} className="space-y-5">
               <div><label className="label" htmlFor="email">البريد الإلكتروني</label><input className="input" id="email" type="email" name="email" autoComplete="email" required dir="ltr" /></div>
-              <div><label className="label" htmlFor="password">كلمة المرور</label><input className="input" id="password" type="password" name="password" autoComplete="current-password" required /></div>
-              <SubmitButton className="btn-primary w-full" pendingText="جاري الدخول..."><KeyRound size={18} /> دخول آمن</SubmitButton>
-              <div className="rounded-2xl bg-sand-50 p-4 text-xs leading-6 text-black/55">
-                <strong className="text-ink">حساب التجربة بعد تشغيل seed:</strong><br />sender@ahdah.sa / Demo1234!
-              </div>
+              <PasswordField id="password" name="password" label="كلمة المرور" autoComplete="current-password" />
+              <SubmitButton className="btn-primary w-full" pendingText="جاري الدخول..."><KeyRound aria-hidden="true" size={18} /> دخول آمن</SubmitButton>
             </form>
           )}
         </section>
       </div>
     </div>
   );
+}
+
+function Feature({ text }: { text: string }) {
+  return <li className="flex items-center gap-3"><CheckCircle2 aria-hidden="true" className="shrink-0 text-blue-300" size={18} />{text}</li>;
 }

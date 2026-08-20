@@ -1,32 +1,31 @@
 import Link from "next/link";
-import { LogOut } from "lucide-react";
+import { LogOut, UserRound } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { logoutAction } from "@/app/actions";
 import { Logo } from "@/components/logo";
+import { DesktopNav } from "@/components/desktop-nav";
 
 export async function Header() {
   const user = await getCurrentUser();
   return (
-    <header className="sticky top-0 z-40 border-b border-black/5 bg-[#fbfaf6]/90 backdrop-blur-xl">
-      <div className="page-wrap flex h-[4.5rem] items-center justify-between py-3">
+    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
+      <div className="page-wrap flex h-[4.75rem] items-center justify-between gap-4 py-3">
         <Logo />
-        <nav className="hidden items-center gap-1 md:flex" aria-label="التنقل الرئيسي">
-          <Link className="rounded-xl px-4 py-2 text-sm font-bold hover:bg-white" href="/dashboard">لوحتي</Link>
-          <Link className="rounded-xl px-4 py-2 text-sm font-bold hover:bg-white" href="/shipments/new">إرسال عُهدة</Link>
-          <Link className="rounded-xl px-4 py-2 text-sm font-bold hover:bg-white" href="/trips/new">إضافة رحلة</Link>
-          <Link className="rounded-xl px-4 py-2 text-sm font-bold hover:bg-white" href="/matches">المطابقات</Link>
-        </nav>
+        {user && <DesktopNav />}
         {user ? (
           <div className="flex items-center gap-2">
-            <span className="hidden text-sm font-bold sm:inline">مرحبًا، {user.name.split(" ")[0]}</span>
+            <span className="hidden min-h-11 items-center gap-2 rounded-2xl bg-slate-50 px-3 text-sm font-semibold text-ink sm:flex">
+              <UserRound aria-hidden="true" size={17} className="text-palm-600" />
+              {user.name.split(" ")[0]}
+            </span>
             <form action={logoutAction}>
-              <button className="grid h-11 w-11 place-items-center rounded-2xl border border-black/5 bg-white text-black/55 hover:text-coral" aria-label="تسجيل الخروج">
-                <LogOut size={18} />
+              <button className="grid h-11 w-11 place-items-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-coral focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-100" aria-label="تسجيل الخروج">
+                <LogOut aria-hidden="true" size={18} />
               </button>
             </form>
           </div>
         ) : (
-          <Link className="btn-primary min-h-10 px-4 py-2" href="/auth">دخول</Link>
+          <Link className="btn-primary min-h-11 px-5 py-2.5" href="/auth">دخول</Link>
         )}
       </div>
     </header>

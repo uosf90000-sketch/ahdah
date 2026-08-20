@@ -168,22 +168,57 @@ export async function advanceShipment(travelerId: string, shipmentId: string, ne
 export async function issueDeliveryOtp(qrToken: string) {
   const shipment = await db.shipment.findUnique({ where: { qrToken } });
   if (!shipment || shipment.status !== ShipmentStatus.ARRIVED) throw new DomainValidationError(["العُهدة غير جاهزة للتسليم"]);
-  const otp = process.env.ENABLE_DEMO_OTP === "true" ? "246810" : String(Math.floor(100000 + Math.random() * 900000));
+
+  const demoMode = process.env.ENABLE_DEMO_OTP === "true";
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+  if (demoMode) {
+    const otp = "246810";
+    await db.shipment.update({
+      where: { id: shipment.id },
+      data: { deliveryOtpHash: otpHash(otp), deliveryOtpExpiresAt: expiresAt },
+    });
+    console.info(`[demo-message] OTP ${otp} for ${shipment.refCode}`);
+    return otp;
+  }
+
+  if (messagingAdapter.managesOtpVerification) {
+    await messagingAdapter.sendOtp({ phone: shipment.recipientPhone, shipmentRef: shipment.refCode });
+    await db.shipment.update({
+      where: { id: shipment.id },
+      data: { deliveryOtpHash: null, deliveryOtpExpiresAt: expiresAt },
+    });
+    return null;
+  }
+
+  const otp = String(Math.floor(100000 + Math.random() * 900000));
   await db.shipment.update({
     where: { id: shipment.id },
-    data: { deliveryOtpHash: otpHash(otp), deliveryOtpExpiresAt: new Date(Date.now() + 10 * 60 * 1000) },
+    data: { deliveryOtpHash: otpHash(otp), deliveryOtpExpiresAt: expiresAt },
   });
   await messagingAdapter.sendOtp({ phone: shipment.recipientPhone, otp, shipmentRef: shipment.refCode });
-  return process.env.ENABLE_DEMO_OTP === "true" ? otp : null;
+  return null;
 }
 
 export async function completeDelivery(qrToken: string, otp: string) {
   const shipment = await db.shipment.findUnique({ where: { qrToken } });
   if (!shipment || shipment.status !== ShipmentStatus.ARRIVED) throw new DomainValidationError(["العُهدة غير جاهزة للتسليم"]);
-  if (!shipment.deliveryOtpHash || !shipment.deliveryOtpExpiresAt || shipment.deliveryOtpExpiresAt <= new Date()) {
+  if (!shipment.deliveryOtpExpiresAt || shipment.deliveryOtpExpiresAt <= new Date()) {
     throw new DomainValidationError(["رمز الاستلام منتهي؛ اطلب رمزًا جديدًا"]);
   }
-  if (otpHash(otp.trim()) !== shipment.deliveryOtpHash) throw new DomainValidationError(["رمز الاستلام غير صحيح"]);
+
+  const cleanOtp = otp.trim();
+  if (!/^\d{4,8}$/.test(cleanOtp)) throw new DomainValidationError(["رمز الاستلام غير صحيح"]);
+
+  if (messagingAdapter.managesOtpVerification && process.env.ENABLE_DEMO_OTP !== "true") {
+    const verified = await messagingAdapter.verifyOtp?.({ phone: shipment.recipientPhone, otp: cleanOtp, shipmentRef: shipment.refCode });
+    if (!verified) throw new DomainValidationError(["رمز الاستلام غير صحيح"]);
+  } else {
+    if (!shipment.deliveryOtpHash || otpHash(cleanOtp) !== shipment.deliveryOtpHash) {
+      throw new DomainValidationError(["رمز الاستلام غير صحيح"]);
+    }
+  }
+
   await db.$transaction([
     db.shipment.update({ where: { id: shipment.id }, data: { status: ShipmentStatus.DELIVERED, deliveryOtpHash: null, deliveryOtpExpiresAt: null } }),
     db.payment.update({ where: { shipmentId: shipment.id }, data: { status: "CAPTURED" } }),

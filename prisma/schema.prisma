@@ -1,0 +1,237 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AccountRole {
+  SENDER
+  TRAVELER
+  BOTH
+}
+
+enum ShipmentStatus {
+  NEW
+  RECEIVING_OFFERS
+  TRAVELER_ACCEPTED
+  INSPECTED
+  WITH_TRAVELER
+  ARRIVED
+  DELIVERED
+  CANCELLED
+}
+
+enum ShipmentCategory {
+  DOCUMENTS
+  CLOTHING
+  ELECTRONICS
+  GIFTS
+  PERSONAL_ITEMS
+  OTHER
+}
+
+enum PhotoKind {
+  ORIGINAL
+  INSPECTION
+  DELIVERY
+}
+
+enum TripStatus {
+  OPEN
+  FULL
+  DEPARTED
+  COMPLETED
+  CANCELLED
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum PaymentStatus {
+  RESERVED
+  CAPTURED
+  RELEASED
+  CANCELLED
+}
+
+model User {
+  id             String          @id @default(cuid())
+  name           String
+  email          String          @unique
+  phone          String?
+  role           AccountRole     @default(BOTH)
+  passwordHash   String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  sessions       Session[]
+  sentShipments  Shipment[]      @relation("ShipmentSender")
+  trips          Trip[]
+  offers         Offer[]
+  photos         ShipmentPhoto[]
+  inspections    Inspection[]
+  statusEvents   StatusEvent[]
+  ratingsGiven   Rating[]        @relation("RatingAuthor")
+  ratingsReceived Rating[]       @relation("RatingTarget")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Shipment {
+  id                    String           @id @default(cuid())
+  refCode               String           @unique
+  senderId              String
+  sender                User             @relation("ShipmentSender", fields: [senderId], references: [id], onDelete: Restrict)
+  fromCity               String
+  toCity                 String
+  weightKg               Decimal          @db.Decimal(8, 2)
+  lengthCm               Decimal          @db.Decimal(8, 2)
+  widthCm                Decimal          @db.Decimal(8, 2)
+  heightCm               Decimal          @db.Decimal(8, 2)
+  category               ShipmentCategory
+  contents               String           @db.Text
+  approximateValueSar   Decimal          @db.Decimal(12, 2)
+  requestedDeliveryAt   DateTime
+  recipientName         String
+  recipientPhone        String
+  status                 ShipmentStatus   @default(NEW)
+  qrToken                String           @unique
+  deliveryOtpHash        String?
+  deliveryOtpExpiresAt  DateTime?
+  acceptedOfferId        String?          @unique
+  acceptedOffer          Offer?           @relation("AcceptedOffer", fields: [acceptedOfferId], references: [id], onDelete: SetNull)
+  photos                  ShipmentPhoto[]
+  offers                  Offer[]          @relation("ShipmentOffers")
+  inspection              Inspection?
+  statusEvents            StatusEvent[]
+  payment                 Payment?
+  ratings                 Rating[]
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+
+  @@index([senderId, status])
+  @@index([fromCity, toCity, requestedDeliveryAt])
+}
+
+model ShipmentPhoto {
+  id           String    @id @default(cuid())
+  shipmentId   String
+  shipment     Shipment  @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  uploadedById String
+  uploadedBy   User      @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+  kind         PhotoKind
+  url          String    @db.Text
+  caption      String?
+  createdAt    DateTime  @default(now())
+
+  @@index([shipmentId, kind])
+}
+
+model Trip {
+  id                String      @id @default(cuid())
+  travelerId        String
+  traveler          User        @relation(fields: [travelerId], references: [id], onDelete: Cascade)
+  fromCity          String
+  toCity            String
+  departureAt       DateTime
+  airline           String
+  flightNumber      String?
+  availableWeightKg Decimal     @db.Decimal(8, 2)
+  status            TripStatus  @default(OPEN)
+  offers            Offer[]
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@index([travelerId, status])
+  @@index([fromCity, toCity, departureAt, status])
+}
+
+model Offer {
+  id          String       @id @default(cuid())
+  shipmentId  String
+  shipment    Shipment     @relation("ShipmentOffers", fields: [shipmentId], references: [id], onDelete: Cascade)
+  tripId      String
+  trip        Trip         @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  travelerId  String
+  traveler    User         @relation(fields: [travelerId], references: [id], onDelete: Cascade)
+  priceSar    Decimal      @db.Decimal(10, 2)
+  note        String?
+  status      OfferStatus  @default(PENDING)
+  acceptedFor Shipment?    @relation("AcceptedOffer")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@unique([shipmentId, tripId])
+  @@index([travelerId, status])
+}
+
+model Inspection {
+  id                  String   @id @default(cuid())
+  shipmentId          String   @unique
+  shipment            Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  travelerId          String
+  traveler            User     @relation(fields: [travelerId], references: [id], onDelete: Restrict)
+  matchedDescription  Boolean
+  matchedPhotos       Boolean
+  noProhibitedItems   Boolean
+  packageSealed       Boolean
+  notes               String?  @db.Text
+  signedAt            DateTime @default(now())
+}
+
+model StatusEvent {
+  id         String         @id @default(cuid())
+  shipmentId String
+  shipment   Shipment       @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  actorId    String?
+  actor      User?          @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  status     ShipmentStatus
+  note       String?
+  createdAt  DateTime       @default(now())
+
+  @@index([shipmentId, createdAt])
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  shipmentId  String        @unique
+  shipment    Shipment      @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  amountSar   Decimal       @db.Decimal(10, 2)
+  status      PaymentStatus @default(RESERVED)
+  provider    String        @default("mock")
+  providerRef String        @unique
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model Rating {
+  id         String   @id @default(cuid())
+  shipmentId String
+  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  authorId   String
+  author     User     @relation("RatingAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  targetId   String
+  target     User     @relation("RatingTarget", fields: [targetId], references: [id], onDelete: Cascade)
+  score      Int
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  @@unique([shipmentId, authorId, targetId])
+  @@index([targetId])
+}

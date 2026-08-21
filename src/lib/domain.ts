@@ -134,7 +134,6 @@ export function validateShipmentInput(input: FormData | Record<string, unknown>)
   if (data.fromCity && data.fromCity === data.toCity) issues.push("مكان الإرسال والوصول يجب أن يكونا مختلفين");
   if (!(Number.isInteger(data.weightKg) && data.weightKg >= 1 && data.weightKg <= 50)) issues.push("الوزن يجب أن يكون عددًا صحيحًا بين 1 و50 كجم");
   if (!(data.approximateValueSar >= 0 && data.approximateValueSar <= 100000)) issues.push("قيمة الشحنة غير صالحة");
-  if (data.contents.length < 15) issues.push("اكتب وصفًا أوضح للمحتويات (15 حرفًا على الأقل)");
   if (!/^05\d{8}$/.test(data.recipientPhone)) issues.push("رقم المستلم يجب أن يكون رقم جوال سعوديًا مثل 05xxxxxxxx");
   const deliveryDate = new Date(data.requestedDeliveryAt);
   if (Number.isNaN(deliveryDate.getTime()) || deliveryDate <= new Date()) issues.push("آخر وقت لاستلام العُهدة يجب أن يكون في المستقبل");

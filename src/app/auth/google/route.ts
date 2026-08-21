@@ -6,6 +6,7 @@ import {
   GOOGLE_VERIFIER_COOKIE,
   googleOAuthConfigured,
 } from "@/lib/google-oauth";
+import { GOOGLE_POLICY_CONSENT_COOKIE } from "@/lib/legal";
 import { getPublicOrigin } from "@/lib/public-origin";
 
 function authError(request: NextRequest, message: string) {
@@ -31,6 +32,13 @@ export async function GET(request: NextRequest) {
     };
     response.cookies.set(GOOGLE_STATE_COOKIE, state, common);
     response.cookies.set(GOOGLE_VERIFIER_COOKIE, verifier, common);
+
+    if (request.nextUrl.searchParams.get("consent") === "1") {
+      response.cookies.set(GOOGLE_POLICY_CONSENT_COOKIE, state, common);
+    } else {
+      response.cookies.set(GOOGLE_POLICY_CONSENT_COOKIE, "", { ...common, maxAge: 0 });
+    }
+
     return response;
   } catch (error) {
     console.error(error);

@@ -30,6 +30,7 @@ import {
   inspectShipmentAction,
 } from "@/app/actions";
 import { MessageBanner } from "@/components/message-banner";
+import { StarRatingField } from "@/components/star-rating-field";
 import { StatusBadge, StatusTimeline } from "@/components/status";
 import { SubmitButton } from "@/components/submit-button";
 
@@ -63,6 +64,9 @@ export default async function ShipmentDetailPage({ params, searchParams }: { par
   const originalPhotos = shipment.photos.filter((photo) => photo.kind === "ORIGINAL");
   const inspectionPhotos = shipment.photos.filter((photo) => photo.kind === "INSPECTION");
   const existingRating = shipment.ratings.find((rating) => rating.authorId === user.id);
+  const senderRating = await db.rating.aggregate({ where: { targetId: shipment.senderId }, _avg: { score: true }, _count: true });
+  const ratingTargetName = isSender ? shipment.acceptedOffer?.traveler.name : shipment.sender.name;
+  const ratingTargetRole = isSender ? "الأمين" : "المرسل";
 
   return (
     <div className="page-wrap section-space">
@@ -81,7 +85,7 @@ export default async function ShipmentDetailPage({ params, searchParams }: { par
             )}
           </div>
           <h1 className="title">{shipment.fromCity} ← {shipment.toCity}</h1>
-          <p className="muted mt-2">أُنشئت بواسطة {shipment.sender.name} · {formatDate(shipment.createdAt)}</p>
+          <p className="muted mt-2">أُنشئت بواسطة {shipment.sender.name} · {ratingAggregate(senderRating._avg.score, senderRating._count)} · {formatDate(shipment.createdAt)}</p>
         </div>
         <div className="flex gap-3"><span className="pill"><Scale size={15} /> {shipment.weightKg.toString()} كجم</span><span className="pill"><Box size={15} /> {CATEGORY_LABELS[shipment.category]}</span></div>
       </div>
@@ -126,7 +130,7 @@ export default async function ShipmentDetailPage({ params, searchParams }: { par
 
           {!isSender && isOpen && (
             <section className="card" id="offer">
-              <p className="eyebrow mb-2">قدّم سعرك</p><h2 className="mb-2 text-xl font-black">هل تناسبك هذه العُهدة؟</h2><p className="muted mb-5">راجع المحتويات والصور أولًا. وقت المرسل ووقت رحلتك للتنسيق بينكما ولا يمنعان المطابقة.</p>
+              <p className="eyebrow mb-2">قدّم سعرك</p><h2 className="mb-2 text-xl font-black">هل تناسبك هذه العُهدة؟</h2><p className="muted mb-5">راجع المحتويات والصور أولًا. تقييم المرسل {ratingAggregate(senderRating._avg.score, senderRating._count)}. وقت المرسل ووقت رحلتك للتنسيق بينكما ولا يمنعان المطابقة.</p>
               {compatibleTrips.length ? (
                 <form action={createOfferAction} className="space-y-5">
                   <input type="hidden" name="shipmentId" value={shipment.id} />
@@ -157,9 +161,23 @@ export default async function ShipmentDetailPage({ params, searchParams }: { par
           {isAcceptedTraveler && shipment.status === "WITH_TRAVELER" && <AdvanceCard shipmentId={shipment.id} nextStatus="ARRIVED" title="وصلت إلى الوجهة" description="أكد الوصول عندما تصبح العُهدة جاهزة لتسليم المستلم." />}
 
           {shipment.status === "DELIVERED" && (isSender || isAcceptedTraveler) && !existingRating && (
-            <section className="card">
-              <div className="mb-5"><p className="eyebrow mb-2">اكتملت العُهدة</p><h2 className="text-xl font-black">قيّم تجربتك</h2></div>
-              <form action={createRatingAction} className="space-y-5"><input type="hidden" name="shipmentId" value={shipment.id} /><div><label className="label" htmlFor="score">التقييم</label><select className="select" id="score" name="score" defaultValue="5"><option value="5">★★★★★ ممتاز</option><option value="4">★★★★☆ جيد جدًا</option><option value="3">★★★☆☆ جيد</option><option value="2">★★☆☆☆ مقبول</option><option value="1">★☆☆☆☆ ضعيف</option></select></div><div><label className="label" htmlFor="comment">تعليق (اختياري)</label><textarea className="textarea" id="comment" name="comment" maxLength={500} /></div><SubmitButton className="btn-primary">حفظ التقييم</SubmitButton></form>
+            <section className="card border-2 !border-amber-100">
+              <div className="mb-5"><p className="eyebrow mb-2">اكتملت العُهدة</p><h2 className="text-xl font-black">قيّم {ratingTargetRole} {ratingTargetName}</h2><p className="muted mt-2">اختر تقييمك من نجمة إلى خمس نجوم.</p></div>
+              <form action={createRatingAction} className="space-y-5">
+                <input type="hidden" name="shipmentId" value={shipment.id} />
+                <div><label className="label">التقييم من 5</label><StarRatingField /></div>
+                <div><label className="label" htmlFor="comment">تعليق (اختياري)</label><textarea className="textarea" id="comment" name="comment" maxLength={500} placeholder="اكتب ملاحظتك عن التعامل والالتزام" /></div>
+                <SubmitButton className="btn-primary">حفظ التقييم</SubmitButton>
+              </form>
+            </section>
+          )}
+
+          {shipment.status === "DELIVERED" && (isSender || isAcceptedTraveler) && existingRating && (
+            <section className="card-soft">
+              <p className="eyebrow mb-2">تم التقييم</p>
+              <h2 className="text-lg font-black">تقييمك لـ {ratingTargetRole}</h2>
+              <p className="mt-3 text-2xl tracking-wider text-amber-400" aria-label={`${existingRating.score} من 5`}>{"★".repeat(existingRating.score)}<span className="text-slate-200">{"★".repeat(5 - existingRating.score)}</span></p>
+              {existingRating.comment && <p className="mt-3 text-sm leading-7 text-slate-600">{existingRating.comment}</p>}
             </section>
           )}
         </div>
@@ -167,11 +185,11 @@ export default async function ShipmentDetailPage({ params, searchParams }: { par
         <aside className="space-y-6 lg:sticky lg:top-24">
           {shipment.acceptedOffer ? (
             <section className="card">
-              <div className="mb-5 flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-2xl bg-palm-50 text-palm-700"><UserRoundCheck /></span><div><p className="text-xs font-bold text-slate-500">المسافر المقبول</p><h2 className="text-lg font-bold">{shipment.acceptedOffer.traveler.name}</h2></div></div>
-              <div className="space-y-3 text-sm"><Row label="السعر" value={formatMoney(shipment.acceptedOffer.priceSar)} /><Row label="الطيران" value={shipment.acceptedOffer.trip.airline} /><Row label="موعد الرحلة" value={formatDate(shipment.acceptedOffer.trip.departureAt)} /><Row label="تقييم المسافر" value={ratingAverage(shipment.acceptedOffer.traveler.ratingsReceived)} /></div>
+              <div className="mb-5 flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-2xl bg-palm-50 text-palm-700"><UserRoundCheck /></span><div><p className="text-xs font-bold text-slate-500">الموصل المقبول</p><h2 className="text-lg font-bold">{shipment.acceptedOffer.traveler.name}</h2></div></div>
+              <div className="space-y-3 text-sm"><Row label="السعر" value={formatMoney(shipment.acceptedOffer.priceSar)} /><Row label="الرحلة" value={shipment.acceptedOffer.trip.airline} /><Row label="موعد الرحلة" value={formatDate(shipment.acceptedOffer.trip.departureAt)} /><Row label="تقييم الموصل" value={ratingAverage(shipment.acceptedOffer.traveler.ratingsReceived)} /><Row label="تقييم المرسل" value={ratingAggregate(senderRating._avg.score, senderRating._count)} /></div>
               {shipment.payment && <p className="mt-4 rounded-xl bg-palm-50 p-3 text-xs font-bold text-palm-700">الدفع التجريبي: {shipment.payment.status === "CAPTURED" ? "تم تحرير المبلغ" : "المبلغ محجوز بأمان"}</p>}
             </section>
-          ) : <section className="card-soft"><Plane className="mb-4 text-palm-600" /><h2 className="text-lg font-black">بانتظار المسافر المناسب</h2><p className="muted mt-2">نعرض طلبك للرحلات المطابقة للمسار والوزن. المواعيد تظهر للتنسيق بين الطرفين.</p></section>}
+          ) : <section className="card-soft"><Plane className="mb-4 text-palm-600" /><h2 className="text-lg font-black">بانتظار الموصل المناسب</h2><p className="muted mt-2">نعرض طلبك للرحلات المطابقة للمسار والوزن. المواعيد تظهر للتنسيق بين الطرفين.</p></section>}
 
           {shipment.acceptedOffer && (
             <section className="card text-center">
@@ -212,4 +230,9 @@ function ratingAverage(ratings: Array<{ score: number }>) {
   if (!ratings.length) return "جديد بلا تقييم";
   const avg = ratings.reduce((sum, rating) => sum + rating.score, 0) / ratings.length;
   return `★ ${avg.toFixed(1)} (${ratings.length})`;
+}
+
+function ratingAggregate(average: number | null, count: number) {
+  if (!count || average === null) return "جديد بلا تقييم";
+  return `★ ${average.toFixed(1)} (${count})`;
 }

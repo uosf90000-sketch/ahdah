@@ -54,7 +54,7 @@ export function TripForm({ minDate }: { minDate: string }) {
         <p className="mt-2 text-sm leading-7 text-slate-500">تقدر تبدأ بطيران ثم تكمل بالسيارة، أو تجعل الرحلة كلها على الطريق. كل مرحلة لها وسيلة نقل مستقلة.</p>
       </div>
 
-      <SaudiPlaceInput id="trip-origin" name="tripOriginDisplay" label="نقطة الانطلاق" value={from} onChange={setFrom} placeholder="اكتب نقطة الانطلاق" />
+      <SaudiPlaceInput id="trip-origin" name="tripOriginDisplay" label="نقطة الانطلاق" value={from} onChange={setFrom} placeholder="اكتب أي مدينة" />
 
       <div className="space-y-4">
         {legs.map((leg, index) => {

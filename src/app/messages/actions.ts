@@ -34,8 +34,11 @@ export async function updateChatLocationAction(formData: FormData) {
   try {
     if (kind !== "pickup" && kind !== "delivery") throw new DomainValidationError(["نوع الموقع غير صالح"]);
     const prefix = kind === "pickup" ? "pickup" : "delivery";
-    const lat = Number(formData.get(`${prefix}Lat`));
-    const lng = Number(formData.get(`${prefix}Lng`));
+    const rawLat = String(formData.get(`${prefix}Lat`) ?? "").trim();
+    const rawLng = String(formData.get(`${prefix}Lng`) ?? "").trim();
+    if (!rawLat || !rawLng) throw new DomainValidationError(["حدد الموقع على الخريطة قبل الحفظ"]);
+    const lat = Number(rawLat);
+    const lng = Number(rawLng);
     const note = String(formData.get(`${prefix}Note`) ?? "");
     await updateChatLocation(user.id, shipmentId, kind, lat, lng, note);
     revalidatePath(destination);

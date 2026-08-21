@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import sharp from "sharp";
-import { storageAdapter } from "../src/lib/adapters/storage.ts";
+import { sanitizeImageBuffer } from "../src/lib/image-sanitizer.ts";
 
 test("uploaded JPEGs are re-encoded without EXIF metadata", async () => {
   const source = await sharp({
@@ -16,10 +16,7 @@ test("uploaded JPEGs are re-encoded without EXIF metadata", async () => {
     .jpeg()
     .toBuffer();
 
-  const file = new File([source], "camera.jpg", { type: "image/jpeg" });
-  const [dataUrl] = await storageAdapter.saveImages([file], "security-test");
-  const encoded = dataUrl.slice(dataUrl.indexOf(",") + 1);
-  const sanitized = Buffer.from(encoded, "base64");
+  const sanitized = await sanitizeImageBuffer("image/jpeg", source);
   const metadata = await sharp(sanitized).metadata();
 
   assert.equal(metadata.format, "jpeg");

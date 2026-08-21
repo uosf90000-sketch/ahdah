@@ -1,6 +1,6 @@
 import { OfferStatus, TripStatus } from "@prisma/client";
 import { db } from "@/lib/db";
-import { DomainValidationError, SAUDI_CITIES, validateOfferInput, validateTripInput } from "@/lib/domain";
+import { DomainValidationError, validateOfferInput, validateTripInput } from "@/lib/domain";
 import { encodeRoadStops, ROAD_AIRLINE, tripMatchesShipment } from "@/lib/trip-route";
 
 function textValue(input: FormData | Record<string, unknown>, key: string) {
@@ -16,6 +16,10 @@ function listValue(input: FormData | Record<string, unknown>, key: string) {
   return [];
 }
 
+function normalizePlace(place: string) {
+  return place.trim().replace(/\s+/g, " ").toLocaleLowerCase("ar-SA");
+}
+
 function prepareTripInput(input: FormData | Record<string, unknown>) {
   const travelMode = textValue(input, "travelMode") || "AIR";
   if (!["AIR", "ROAD"].includes(travelMode)) throw new DomainValidationError(["اختر طريقة تنقل صحيحة"]);
@@ -24,14 +28,13 @@ function prepareTripInput(input: FormData | Record<string, unknown>) {
     const fromCity = textValue(input, "fromCity");
     const toCity = textValue(input, "toCity");
     const stops = listValue(input, "routeStop");
-    const allowedCities = new Set<string>(SAUDI_CITIES);
 
     if (stops.length > 20) throw new DomainValidationError(["الحد الأقصى 20 محطة وسيطة"]);
-    if (stops.some((city) => !allowedCities.has(city))) throw new DomainValidationError(["إحدى محطات الطريق غير مدعومة"]);
+    if ([fromCity, toCity, ...stops].some((place) => place.length > 80)) throw new DomainValidationError(["اسم المدينة أو المحافظة طويل جدًا"]);
 
     const route = [fromCity, ...stops, toCity].filter(Boolean);
-    const normalized = route.map((city) => city.trim().replace(/\s+/g, " ").toLocaleLowerCase("ar-SA"));
-    if (new Set(normalized).size !== normalized.length) throw new DomainValidationError(["لا تكرر نفس المدينة في مسار الطريق"]);
+    const normalized = route.map(normalizePlace);
+    if (new Set(normalized).size !== normalized.length) throw new DomainValidationError(["لا تكرر نفس المدينة أو المحافظة في مسار الطريق"]);
 
     if (input instanceof FormData) {
       input.set("airline", ROAD_AIRLINE);

@@ -103,6 +103,9 @@ model Shipment {
   sender               User             @relation("ShipmentSender", fields: [senderId], references: [id], onDelete: Restrict)
   fromCity              String
   toCity                String
+  pickupLat             Float?
+  pickupLng             Float?
+  pickupNote            String?          @db.VarChar(300)
   weightKg              Decimal          @db.Decimal(8, 2)
   lengthCm              Decimal          @db.Decimal(8, 2)
   widthCm               Decimal          @db.Decimal(8, 2)

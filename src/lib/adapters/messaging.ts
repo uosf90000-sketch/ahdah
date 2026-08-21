@@ -61,7 +61,12 @@ class AuthenticaMessagingAdapter implements MessagingAdapter {
   }
 
   async sendOtp({ phone }: { phone: string; otp?: string; shipmentRef: string }) {
-    await this.request("/api/v2/send-otp", { method: "sms", phone: normalizeSaudiPhone(phone) });
+    await this.request("/api/v2/send-otp", {
+      method: "sms",
+      phone: normalizeSaudiPhone(phone),
+      number_of_digits: "4",
+      otp_format: "numeric",
+    });
   }
 
   async verifyOtp({ phone, otp }: { phone: string; otp: string; shipmentRef: string }) {

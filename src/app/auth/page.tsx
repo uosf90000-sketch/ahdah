@@ -56,9 +56,18 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
 
           {googleEnabled && (
             <>
-              <Link href="/auth/google" className="mb-5 flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl border border-slate-300 bg-white px-5 text-sm font-semibold text-ink transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100">
-                <GoogleIcon /> المتابعة باستخدام Google
-              </Link>
+              {register ? (
+                <form action="/auth/google" method="get" className="mb-5 space-y-3">
+                  <PolicyConsent id="google-policy-consent" name="consent" value="1" />
+                  <button type="submit" className="flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl border border-slate-300 bg-white px-5 text-sm font-semibold text-ink transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100">
+                    <GoogleIcon /> إنشاء الحساب باستخدام Google
+                  </button>
+                </form>
+              ) : (
+                <Link href="/auth/google" className="mb-5 flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl border border-slate-300 bg-white px-5 text-sm font-semibold text-ink transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100">
+                  <GoogleIcon /> المتابعة باستخدام Google
+                </Link>
+              )}
               <div className="mb-5 flex items-center gap-3 text-xs text-slate-400"><span className="h-px flex-1 bg-slate-200" /><span>أو باستخدام البريد</span><span className="h-px flex-1 bg-slate-200" /></div>
             </>
           )}
@@ -71,6 +80,7 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
                 <div><label className="label" htmlFor="phone">رقم الجوال</label><input className="input" id="phone" name="phone" autoComplete="tel" inputMode="tel" placeholder="05xxxxxxxx" dir="ltr" /></div>
               </div>
               <PasswordField id="register-password" name="password" label="كلمة المرور" autoComplete="new-password" minLength={8} help="8 أحرف على الأقل" />
+              <PolicyConsent id="email-policy-consent" name="acceptPolicies" value="yes" />
               <SubmitButton className="btn-primary w-full" pendingText="جاري إنشاء الحساب..."><UserPlus aria-hidden="true" size={18} /> إنشاء الحساب</SubmitButton>
             </form>
           ) : (
@@ -82,6 +92,20 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
           )}
         </section>
       </div>
+    </div>
+  );
+}
+
+function PolicyConsent({ id, name, value }: { id: string; name: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-palm-100 bg-palm-50/60 p-4">
+      <div className="flex items-start gap-3">
+        <input id={id} name={name} value={value} type="checkbox" required className="mt-1 h-5 w-5 shrink-0 accent-palm-600" />
+        <label htmlFor={id} className="text-sm font-semibold leading-7 text-slate-700">
+          أوافق على <Link href="/legal/terms" target="_blank" className="font-black text-palm-700 underline underline-offset-2">الشروط والأحكام</Link> و<Link href="/legal/privacy" target="_blank" className="font-black text-palm-700 underline underline-offset-2">سياسة الخصوصية</Link> و<Link href="/legal/acceptable-use" target="_blank" className="font-black text-palm-700 underline underline-offset-2">سياسة الاستخدام المقبول</Link> و<Link href="/legal/cancellations-disputes" target="_blank" className="font-black text-palm-700 underline underline-offset-2">سياسة الإلغاء والاسترجاع والنزاعات</Link>، وأقر بالاطلاع على <Link href="/legal/prohibited-items" target="_blank" className="font-black text-palm-700 underline underline-offset-2">المحتويات المحظورة</Link>.
+        </label>
+      </div>
+      <p className="mt-2 pr-8 text-xs leading-6 text-slate-500">لا يمكن إنشاء حساب جديد قبل الموافقة على السياسات.</p>
     </div>
   );
 }

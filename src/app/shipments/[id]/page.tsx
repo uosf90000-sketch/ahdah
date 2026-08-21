@@ -31,6 +31,7 @@ import {
   inspectShipmentAction,
 } from "@/app/actions";
 import { MessageBanner } from "@/components/message-banner";
+import { NativeImageInput } from "@/components/native-image-input";
 import { StarRatingField } from "@/components/star-rating-field";
 import { StatusBadge, StatusTimeline } from "@/components/status";
 import { SubmitButton } from "@/components/submit-button";
@@ -151,7 +152,7 @@ export default async function ShipmentDetailPage({ params, searchParams }: { par
               <form action={inspectShipmentAction} className="space-y-4" encType="multipart/form-data">
                 <input type="hidden" name="shipmentId" value={shipment.id} />
                 {[["matchedDescription", "المحتويات مطابقة للوصف المكتوب"], ["matchedPhotos", "المحتويات مطابقة لصور المرسل"], ["noProhibitedItems", "تأكدت من عدم وجود مواد محظورة أو مخفية"], ["packageSealed", "تم إغلاق العُهدة بعد الفحص"]].map(([name, label]) => <label key={name} className="flex min-h-14 cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 p-4 font-bold hover:bg-palm-50"><input className="mt-1 h-5 w-5 accent-palm-600" type="checkbox" name={name} required /><span>{label}</span></label>)}
-                <div><label className="label flex items-center gap-2" htmlFor="inspectionPhotos"><Camera size={18} className="text-palm-600" /> صور الفحص الجديدة</label><input className="input" id="inspectionPhotos" name="inspectionPhotos" type="file" accept="image/jpeg,image/png,image/webp" multiple required /></div>
+                <div><label className="label flex items-center gap-2" htmlFor="inspectionPhotos"><Camera size={18} className="text-palm-600" /> صور الفحص الجديدة</label><NativeImageInput id="inspectionPhotos" name="inspectionPhotos" multiple required maxFiles={6} className="input" /></div>
                 <div><label className="label" htmlFor="notes">ملاحظات الفحص (اختياري)</label><textarea className="textarea" id="notes" name="notes" maxLength={1000} /></div>
                 <SubmitButton className="btn-primary w-full" pendingText="جاري توثيق الفحص..."><PackageCheck size={18} /> أؤكد أنني شاهدت المحتويات ووافقت على حملها</SubmitButton>
               </form>

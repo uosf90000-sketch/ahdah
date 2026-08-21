@@ -31,7 +31,7 @@ type SaudiPlaceInputProps = {
   placeholder?: string;
 };
 
-export function SaudiPlaceInput({ id, name, label, value, onChange, required = true, className = "", placeholder }: SaudiPlaceInputProps) {
+export function SaudiPlaceInput({ id, name, label, value, onChange, required = true, className = "", placeholder = "اكتب أي مدينة" }: SaudiPlaceInputProps) {
   const listId = `${id}-saudi-places`;
   return (
     <div className={className}>

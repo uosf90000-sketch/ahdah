@@ -66,3 +66,31 @@ export async function sendChatMessage(userId: string, shipmentId: string, rawBod
 
   return db.chatMessage.create({ data: { shipmentId, senderId: userId, body } });
 }
+
+export async function updateChatLocation(
+  userId: string,
+  shipmentId: string,
+  kind: "pickup" | "delivery",
+  lat: number,
+  lng: number,
+  note: string,
+) {
+  const { shipment, writable } = await getChatContext(userId, shipmentId);
+  if (!writable) throw new DomainValidationError(["لا يمكن تعديل الموقع بعد انتهاء العُهدة"]);
+  if (shipment.senderId !== userId) throw new DomainValidationError(["تحديد موقع الاستلام والتسليم متاح للمرسل فقط"]);
+  if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lng) || lng < -180 || lng > 180) {
+    throw new DomainValidationError(["حدد موقعًا صحيحًا على الخريطة"]);
+  }
+  const cleanNote = note.trim();
+  if (cleanNote.length > 300) throw new DomainValidationError(["ملاحظة الموقع طويلة جدًا"]);
+
+  const data = kind === "pickup"
+    ? { pickupLat: lat, pickupLng: lng, pickupNote: cleanNote }
+    : { deliveryLat: lat, deliveryLng: lng, deliveryNote: cleanNote };
+  const label = kind === "pickup" ? "الاستلام" : "التسليم";
+
+  await db.$transaction([
+    db.shipment.update({ where: { id: shipmentId }, data }),
+    db.chatMessage.create({ data: { shipmentId, senderId: userId, body: `📍 تم تحديد موقع ${label}` } }),
+  ]);
+}

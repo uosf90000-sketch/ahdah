@@ -35,6 +35,8 @@ declare global {
 
 const LEAFLET_JS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
 const LEAFLET_CSS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+const LEAFLET_JS_INTEGRITY = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=";
+const LEAFLET_CSS_INTEGRITY = "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=";
 const DEFAULT_CENTER: [number, number] = [24.7136, 46.6753];
 
 function loadLeaflet() {
@@ -46,6 +48,9 @@ function loadLeaflet() {
       const link = document.createElement("link");
       link.rel = "stylesheet";
       link.href = LEAFLET_CSS;
+      link.integrity = LEAFLET_CSS_INTEGRITY;
+      link.crossOrigin = "anonymous";
+      link.referrerPolicy = "no-referrer";
       link.dataset.ahdatukLeaflet = "true";
       document.head.appendChild(link);
     }
@@ -64,6 +69,9 @@ function loadLeaflet() {
 
     const script = document.createElement("script");
     script.src = LEAFLET_JS;
+    script.integrity = LEAFLET_JS_INTEGRITY;
+    script.crossOrigin = "anonymous";
+    script.referrerPolicy = "no-referrer";
     script.async = true;
     script.dataset.ahdatukLeaflet = "true";
     script.addEventListener("load", finish, { once: true });

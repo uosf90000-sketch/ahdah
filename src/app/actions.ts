@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { createSession, destroySession, hashPassword, requireUser, verifyPassword } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { DomainValidationError } from "@/lib/domain";
+import { notifyAcceptedTraveler, notifyShipmentSender } from "@/lib/push-service";
 import { clientAddress, enforceRateLimit } from "@/lib/rate-limit";
 import {
   createRating,
@@ -133,13 +134,18 @@ export async function createOfferAction(formData: FormData) {
 
 export async function acceptOfferAction(formData: FormData) {
   const user = await requireUser();
-  const shipmentId = String(formData.get("shipmentId") ?? "");
-  let destination = `/shipments/${shipmentId}`;
+  const requestedShipmentId = String(formData.get("shipmentId") ?? "");
+  let destination = `/shipments/${requestedShipmentId}`;
   try {
-    await acceptOfferSafely(user.id, String(formData.get("offerId") ?? ""));
+    const shipmentId = await acceptOfferSafely(user.id, String(formData.get("offerId") ?? ""));
+    await notifyAcceptedTraveler(shipmentId, {
+      title: "تم قبول عرضك",
+      body: "وافق المرسل على عرضك. افتح العُهدة للتنسيق والبدء بالخطوات التالية.",
+      href: `/shipments/${shipmentId}`,
+    });
     revalidatePath(`/shipments/${shipmentId}`);
     revalidatePath("/dashboard");
-    destination += `?success=${encodeURIComponent("تم قبول المسافر وحجز المبلغ تجريبيًا")}`;
+    destination = `/shipments/${shipmentId}?success=${encodeURIComponent("تم قبول المسافر وحجز المبلغ تجريبيًا")}`;
   } catch (error) {
     destination = withError(destination, messageFrom(error));
   }
@@ -152,6 +158,11 @@ export async function inspectShipmentAction(formData: FormData) {
   let destination = `/shipments/${shipmentId}`;
   try {
     await inspectShipment(user.id, shipmentId, formData);
+    await notifyShipmentSender(shipmentId, {
+      title: "تم فحص العُهدة",
+      body: "وثّق الموصل فحص المحتويات وأصبحت العُهدة جاهزة لخطوة الاستلام.",
+      href: `/shipments/${shipmentId}`,
+    });
     revalidatePath(`/shipments/${shipmentId}`);
     destination += `?success=${encodeURIComponent("تم توثيق فحص العُهدة بنجاح")}`;
   } catch (error) {
@@ -167,9 +178,14 @@ export async function advanceShipmentAction(formData: FormData) {
   try {
     const status = String(formData.get("nextStatus")) as "WITH_TRAVELER" | "ARRIVED";
     if (!["WITH_TRAVELER", "ARRIVED"].includes(status)) throw new DomainValidationError(["الحالة المطلوبة غير صالحة"]);
-    await advanceShipmentSafely(user.id, shipmentId, status);
-    revalidatePath(`/shipments/${shipmentId}`);
-    destination += `?success=${encodeURIComponent("تم تحديث حالة العُهدة")}`;
+    const updatedShipmentId = await advanceShipmentSafely(user.id, shipmentId, status);
+    await notifyShipmentSender(updatedShipmentId, {
+      title: status === "ARRIVED" ? "وصلت العُهدة إلى الوجهة" : "استلم الموصل العُهدة",
+      body: status === "ARRIVED" ? "أصبحت العُهدة جاهزة لخطوة التسليم والتحقق بالرمز." : "أكد الموصل استلام العُهدة وبدأ نقلها.",
+      href: `/shipments/${updatedShipmentId}`,
+    });
+    revalidatePath(`/shipments/${updatedShipmentId}`);
+    destination = `/shipments/${updatedShipmentId}?success=${encodeURIComponent("تم تحديث حالة العُهدة")}`;
   } catch (error) {
     destination = withError(destination, messageFrom(error));
   }
@@ -195,6 +211,18 @@ export async function completeDeliveryAction(formData: FormData) {
   let destination = `/handover/${encodeURIComponent(token)}`;
   try {
     const shipmentId = await completeDeliverySafely(token, String(formData.get("otp") ?? ""));
+    await Promise.all([
+      notifyShipmentSender(shipmentId, {
+        title: "تم تسليم عهدتك",
+        body: "تم تأكيد الاستلام بالرمز واكتملت العُهدة. يمكنك الآن تقييم الموصل.",
+        href: `/shipments/${shipmentId}`,
+      }),
+      notifyAcceptedTraveler(shipmentId, {
+        title: "تم تأكيد التسليم",
+        body: "أكد المستلم استلام العُهدة. يمكنك الآن تقييم المرسل.",
+        href: `/shipments/${shipmentId}`,
+      }),
+    ]);
     revalidatePath(`/shipments/${shipmentId}`);
     revalidatePath("/dashboard");
     destination += "?delivered=1";

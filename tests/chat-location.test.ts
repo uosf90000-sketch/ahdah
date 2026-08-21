@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { validateShipmentInput } from "@/lib/domain";
+import assert from "node:assert/strict";
+import test from "node:test";
+import { validateShipmentInput } from "../src/lib/domain.ts";
 
 const base = {
   fromCity: "جدة",
@@ -14,24 +15,22 @@ const base = {
   recipientPhone: "0500000000",
 };
 
-describe("shipment locations", () => {
-  it("allows creating a shipment without exact locations", () => {
-    const data = validateShipmentInput(base);
-    expect(data.pickupLat).toBeNull();
-    expect(data.pickupLng).toBeNull();
-    expect(data.deliveryLat).toBeNull();
-    expect(data.deliveryLng).toBeNull();
-  });
+test("يسمح بإنشاء العُهدة بدون المواقع الدقيقة", () => {
+  const data = validateShipmentInput(base);
+  assert.equal(data.pickupLat, null);
+  assert.equal(data.pickupLng, null);
+  assert.equal(data.deliveryLat, null);
+  assert.equal(data.deliveryLng, null);
+});
 
-  it("keeps valid coordinates when supplied", () => {
-    const data = validateShipmentInput({
-      ...base,
-      pickupLat: "21.543333",
-      pickupLng: "39.172779",
-      deliveryLat: "24.08954",
-      deliveryLng: "38.061798",
-    });
-    expect(data.pickupLat).toBe(21.543333);
-    expect(data.deliveryLng).toBe(38.061798);
+test("يحفظ الإحداثيات الصحيحة عند إرسالها", () => {
+  const data = validateShipmentInput({
+    ...base,
+    pickupLat: "21.543333",
+    pickupLng: "39.172779",
+    deliveryLat: "24.08954",
+    deliveryLng: "38.061798",
   });
+  assert.equal(data.pickupLat, 21.543333);
+  assert.equal(data.deliveryLng, 38.061798);
 });

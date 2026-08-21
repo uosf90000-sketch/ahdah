@@ -54,9 +54,9 @@ export async function destroySession() {
 }
 
 export async function getCurrentUser() {
+  await ensureRuntimeSchema();
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  await ensureRuntimeSchema();
   const session = await db.session.findUnique({ where: { tokenHash: tokenHash(token) }, include: { user: true } });
   if (!session || session.expiresAt <= new Date()) return null;
   return session.user;

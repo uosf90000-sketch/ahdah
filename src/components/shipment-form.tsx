@@ -88,30 +88,12 @@ export function ShipmentForm({ minDate }: { minDate: string }) {
             </div>
 
             <div className="mt-6">
-              <p className="label">كيف تقبل نقل العُهدة؟</p>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <label className="cursor-pointer">
-                  <input className="peer sr-only" type="radio" name="transportPreference" value="AIR" required />
-                  <span className="block min-h-24 rounded-2xl border border-slate-200 bg-white p-4 transition peer-checked:border-palm-500 peer-checked:bg-palm-50 peer-checked:ring-2 peer-checked:ring-palm-100">
-                    <strong className="block text-sm">✈️ طيران فقط</strong>
-                    <small className="mt-2 block leading-5 text-slate-500">يظهر الطلب فقط للرحلات الجوية المطابقة.</small>
-                  </span>
-                </label>
-                <label className="cursor-pointer">
-                  <input className="peer sr-only" type="radio" name="transportPreference" value="ROAD" required />
-                  <span className="block min-h-24 rounded-2xl border border-slate-200 bg-white p-4 transition peer-checked:border-palm-500 peer-checked:bg-palm-50 peer-checked:ring-2 peer-checked:ring-palm-100">
-                    <strong className="block text-sm">🚗 على الطريق فقط</strong>
-                    <small className="mt-2 block leading-5 text-slate-500">لا يظهر الطلب لأي رحلة طيران.</small>
-                  </span>
-                </label>
-                <label className="cursor-pointer">
-                  <input className="peer sr-only" type="radio" name="transportPreference" value="ANY" defaultChecked required />
-                  <span className="block min-h-24 rounded-2xl border border-slate-200 bg-white p-4 transition peer-checked:border-palm-500 peer-checked:bg-palm-50 peer-checked:ring-2 peer-checked:ring-palm-100">
-                    <strong className="block text-sm">🔄 كلاهما عادي</strong>
-                    <small className="mt-2 block leading-5 text-slate-500">يظهر للطيران والطريق والمسارات المختلطة.</small>
-                  </span>
-                </label>
-              </div>
+              <label className="label" htmlFor="transportPreference">طريقة النقل</label>
+              <select className="select" id="transportPreference" name="transportPreference" defaultValue="ANY" required>
+                <option value="AIR">طيران فقط</option>
+                <option value="ROAD">على الطريق فقط</option>
+                <option value="ANY">كلاهما</option>
+              </select>
             </div>
 
             <div className="mt-6"><label className="label" htmlFor="requestedDeliveryAt">آخر وقت مناسب للاستلام من المرسل</label><input className="input" id="requestedDeliveryAt" name="requestedDeliveryAt" type="datetime-local" min={minDate} required /></div>

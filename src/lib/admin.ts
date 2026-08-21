@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 
-const DEFAULT_ADMIN_DOMAIN = "eahdatuk.com";
+const TEMP_ADMIN_EMAIL = "admin@eahdatuk.com";
 
 function configuredAdminEmails() {
   return new Set(
@@ -13,12 +13,15 @@ function configuredAdminEmails() {
 }
 
 export function isAdminIdentity(user: { email: string; emailVerifiedAt: Date | null }) {
-  if (!user.emailVerifiedAt) return false;
   const email = user.email.trim().toLowerCase();
-  const explicit = configuredAdminEmails();
-  if (explicit.has(email)) return true;
-  const domain = (process.env.ADMIN_EMAIL_DOMAIN ?? DEFAULT_ADMIN_DOMAIN).trim().toLowerCase();
-  return Boolean(domain && email.endsWith(`@${domain}`));
+
+  // Temporary bootstrap admin while eahdatuk.com does not have hosted email yet.
+  // This exact address may sign in with the normal password flow without email verification.
+  if (email === TEMP_ADMIN_EMAIL) return true;
+
+  // Any additional production admins must be explicitly configured and verified.
+  if (!user.emailVerifiedAt) return false;
+  return configuredAdminEmails().has(email);
 }
 
 export async function requireAdmin() {

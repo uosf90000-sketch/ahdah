@@ -71,16 +71,30 @@ function required(value: string, label: string, issues: string[]) {
   if (!value) issues.push(`${label} مطلوب`);
 }
 
+function validateCoordinates(rawLat: string, rawLng: string, lat: number, lng: number, label: string, issues: string[]) {
+  if (!rawLat || !rawLng) {
+    issues.push(`حدد ${label} على الخريطة`);
+    return;
+  }
+  if (!(lat >= -90 && lat <= 90)) issues.push(`خط عرض ${label} غير صالح`);
+  if (!(lng >= -180 && lng <= 180)) issues.push(`خط طول ${label} غير صالح`);
+}
+
 export function validateShipmentInput(input: FormData | Record<string, unknown>) {
   const issues: string[] = [];
   const pickupLatRaw = textValue(input, "pickupLat");
   const pickupLngRaw = textValue(input, "pickupLng");
+  const deliveryLatRaw = textValue(input, "deliveryLat");
+  const deliveryLngRaw = textValue(input, "deliveryLng");
   const data = {
     fromCity: textValue(input, "fromCity"),
     toCity: textValue(input, "toCity"),
     pickupLat: Number(pickupLatRaw),
     pickupLng: Number(pickupLngRaw),
     pickupNote: textValue(input, "pickupNote"),
+    deliveryLat: Number(deliveryLatRaw),
+    deliveryLng: Number(deliveryLngRaw),
+    deliveryNote: textValue(input, "deliveryNote"),
     weightKg: numberValue(input, "weightKg"),
     category: textValue(input, "category"),
     contents: textValue(input, "contents"),
@@ -96,10 +110,10 @@ export function validateShipmentInput(input: FormData | Record<string, unknown>)
   required(data.requestedDeliveryAt, "آخر وقت لاستلام العُهدة من المرسل", issues);
   required(data.recipientName, "اسم المستلم", issues);
   required(data.recipientPhone, "رقم المستلم", issues);
-  if (!pickupLatRaw || !pickupLngRaw) issues.push("حدد موقع استلام العُهدة على الخريطة");
-  if (pickupLatRaw && (!(data.pickupLat >= -90) || !(data.pickupLat <= 90))) issues.push("خط عرض موقع الاستلام غير صالح");
-  if (pickupLngRaw && (!(data.pickupLng >= -180) || !(data.pickupLng <= 180))) issues.push("خط طول موقع الاستلام غير صالح");
+  validateCoordinates(pickupLatRaw, pickupLngRaw, data.pickupLat, data.pickupLng, "موقع الاستلام", issues);
+  validateCoordinates(deliveryLatRaw, deliveryLngRaw, data.deliveryLat, data.deliveryLng, "موقع التسليم", issues);
   if (data.pickupNote.length > 300) issues.push("ملاحظة موقع الاستلام طويلة جدًا");
+  if (data.deliveryNote.length > 300) issues.push("ملاحظة موقع التسليم طويلة جدًا");
   if (data.fromCity && data.fromCity === data.toCity) issues.push("مدينة الإرسال والوصول يجب أن تكونا مختلفتين");
   if (!(Number.isInteger(data.weightKg) && data.weightKg >= 1 && data.weightKg <= 50)) issues.push("الوزن يجب أن يكون عددًا صحيحًا بين 1 و50 كجم");
   if (!(data.approximateValueSar >= 0 && data.approximateValueSar <= 100000)) issues.push("قيمة الشحنة غير صالحة");

@@ -4,6 +4,7 @@ import { LocateFixed, LoaderCircle, MapPin, ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 export type PickupCoordinates = { lat: number; lng: number };
+export type LocationCoordinates = PickupCoordinates;
 
 type LeafletMap = {
   setView(coords: [number, number], zoom: number): LeafletMap;
@@ -73,14 +74,18 @@ function loadLeaflet() {
   return window.__ahdatukLeafletPromise;
 }
 
+type LocationKind = "pickup" | "delivery";
+
 export function PickupLocationPicker({
   value,
   onChange,
   showError = false,
+  kind = "pickup",
 }: {
-  value: PickupCoordinates | null;
-  onChange: (value: PickupCoordinates) => void;
+  value: LocationCoordinates | null;
+  onChange: (value: LocationCoordinates) => void;
   showError?: boolean;
+  kind?: LocationKind;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -90,6 +95,9 @@ export function PickupLocationPicker({
   const [locating, setLocating] = useState(false);
   const [mapError, setMapError] = useState(false);
   const [geoError, setGeoError] = useState("");
+  const isPickup = kind === "pickup";
+  const label = isPickup ? "موقع الاستلام" : "موقع التسليم";
+  const prefix = isPickup ? "pickup" : "delivery";
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -129,7 +137,7 @@ export function PickupLocationPicker({
           placeMarker(next.lat, next.lng);
           onChangeRef.current(next);
         });
-        window.setTimeout(() => map.invalidateSize(), 50);
+        window.setTimeout(() => map.invalidateSize(), 80);
       })
       .catch(() => {
         if (!cancelled) setMapError(true);
@@ -141,6 +149,8 @@ export function PickupLocationPicker({
       mapRef.current = null;
       markerRef.current = null;
     };
+    // The map is initialized once; later coordinate changes are handled below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -183,7 +193,7 @@ export function PickupLocationPicker({
     <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div>
-          <h3 className="flex items-center gap-2 font-bold"><MapPin className="text-palm-600" size={19} /> موقع استلام العُهدة</h3>
+          <h3 className="flex items-center gap-2 font-bold"><MapPin className="text-palm-600" size={19} /> {label}</h3>
           <p className="mt-1 text-xs leading-6 text-slate-500">استخدم موقعك الحالي أو اضغط على الخريطة، ويمكنك سحب الدبوس للتعديل.</p>
         </div>
         <button type="button" onClick={useCurrentLocation} disabled={locating} className="btn-secondary shrink-0">
@@ -192,26 +202,26 @@ export function PickupLocationPicker({
         </button>
       </div>
 
-      <input type="hidden" name="pickupLat" value={value?.lat ?? ""} />
-      <input type="hidden" name="pickupLng" value={value?.lng ?? ""} />
+      <input type="hidden" name={`${prefix}Lat`} value={value?.lat ?? ""} />
+      <input type="hidden" name={`${prefix}Lng`} value={value?.lng ?? ""} />
 
       <div className="relative mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
-        <div ref={containerRef} className="h-64 w-full sm:h-72" dir="ltr" aria-label="خريطة تحديد موقع الاستلام" />
+        <div ref={containerRef} className="h-64 w-full sm:h-72" dir="ltr" aria-label={`خريطة تحديد ${label}`} />
         {mapError && <div className="absolute inset-0 grid place-items-center bg-slate-100 p-6 text-center text-sm text-slate-600">تعذر تحميل الخريطة. حاول تحديث الصفحة، ويمكنك استخدام GPS بعد عودة الاتصال.</div>}
       </div>
 
-      {value && <p className="mt-3 text-xs font-semibold text-emerald-700">✓ تم تحديد موقع الاستلام. حرّك الدبوس إذا احتجت تعديل النقطة.</p>}
-      {showError && !value && <p className="mt-3 text-sm font-bold text-red-700">حدد موقع الاستلام قبل الانتقال للخطوة التالية.</p>}
+      {value && <p className="mt-3 text-xs font-semibold text-emerald-700">✓ تم تحديد {label}. حرّك الدبوس إذا احتجت تعديل النقطة.</p>}
+      {showError && !value && <p className="mt-3 text-sm font-bold text-red-700">حدد {label} قبل الانتقال للخطوة التالية.</p>}
       {geoError && <p className="mt-3 text-xs leading-6 text-amber-800">{geoError}</p>}
 
       <div className="mt-4">
-        <label className="label" htmlFor="pickupNote">ملاحظة للموقع (اختياري)</label>
-        <input className="input bg-white" id="pickupNote" name="pickupNote" maxLength={300} placeholder="مثال: البوابة الرئيسية، اتصل عند الوصول" />
+        <label className="label" htmlFor={`${prefix}Note`}>ملاحظة للموقع (اختياري)</label>
+        <input className="input bg-white" id={`${prefix}Note`} name={`${prefix}Note`} maxLength={300} placeholder={isPickup ? "مثال: البوابة الرئيسية، اتصل عند الوصول" : "مثال: مدخل العمارة أو اسم الفندق"} />
       </div>
 
       <div className="mt-4 flex items-start gap-2 rounded-2xl bg-white p-3 text-xs leading-6 text-slate-600">
         <ShieldCheck className="mt-0.5 shrink-0 text-palm-600" size={16} />
-        <span>الموقع الدقيق لا يظهر للموصلين قبل قبول العرض. بعد القبول يظهر فقط للموصل الذي اخترته.</span>
+        <span>الموقع الدقيق لا يظهر قبل قبول العرض، وبعد القبول يظهر فقط لطرفي العُهدة.</span>
       </div>
     </div>
   );

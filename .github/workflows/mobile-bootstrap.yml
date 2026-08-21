@@ -1,0 +1,42 @@
+name: Mobile bootstrap
+
+on:
+  push:
+    branches: [feat/mobile-store-readiness]
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ahdah?schema=public
+      SESSION_SECRET: mobile-bootstrap-session-secret-that-is-long-enough
+      NEXT_PUBLIC_APP_URL: https://ahdah-production.up.railway.app
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install
+      - run: test -d ios || npx cap add ios
+      - run: test -d android || npx cap add android
+      - run: npx cap sync
+      - run: npx capacitor-assets generate
+      - name: Commit generated mobile projects
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json ios android
+          if git diff --cached --quiet; then
+            echo "No generated changes"
+          else
+            git commit -m "chore: generate iOS and Android projects"
+            git push
+          fi

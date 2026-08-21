@@ -11,19 +11,19 @@ import {
 
 const now = new Date("2026-08-20T12:00:00.000Z");
 
-test("يطابق رحلة حسب المسار والوقت والوزن", () => {
+test("يطابق رحلة حسب المسار والوزن دون تقييد بموعد المرسل", () => {
   const result = isTripMatch(
-    { fromCity: "جدة", toCity: "الرياض", departureAt: new Date("2026-08-22T12:00:00Z"), availableWeightKg: 8, status: "OPEN" },
-    { fromCity: "جدة", toCity: "الرياض", requestedDeliveryAt: new Date("2026-08-24T12:00:00Z"), weightKg: 4.5, status: "RECEIVING_OFFERS" },
+    { fromCity: "جدة", toCity: "الرياض", departureAt: new Date("2026-08-22T21:00:00Z"), availableWeightKg: 10, status: "OPEN" },
+    { fromCity: "جدة", toCity: "الرياض", requestedDeliveryAt: new Date("2026-08-22T17:00:00Z"), weightKg: 10, status: "RECEIVING_OFFERS" },
     now,
   );
   assert.equal(result, true);
 });
 
-test("يرفض المطابقة عند عدم كفاية الوزن أو تأخر الرحلة", () => {
-  const shipment = { fromCity: "جدة", toCity: "الرياض", requestedDeliveryAt: new Date("2026-08-24T12:00:00Z"), weightKg: 9, status: "NEW" };
+test("يرفض المطابقة عند عدم كفاية الوزن أو إذا كانت الرحلة في الماضي", () => {
+  const shipment = { fromCity: "جدة", toCity: "الرياض", requestedDeliveryAt: new Date("2026-08-24T12:00:00Z"), weightKg: 10, status: "NEW" };
   assert.equal(isTripMatch({ fromCity: "جدة", toCity: "الرياض", departureAt: new Date("2026-08-22T12:00:00Z"), availableWeightKg: 8 }, shipment, now), false);
-  assert.equal(isTripMatch({ fromCity: "جدة", toCity: "الرياض", departureAt: new Date("2026-08-25T12:00:00Z"), availableWeightKg: 10 }, shipment, now), false);
+  assert.equal(isTripMatch({ fromCity: "جدة", toCity: "الرياض", departureAt: new Date("2026-08-19T12:00:00Z"), availableWeightKg: 10 }, shipment, now), false);
 });
 
 test("يسمح فقط بانتقالات الحالة المتسلسلة", () => {
@@ -37,14 +37,17 @@ test("يتحقق من السعر", () => {
   assert.throws(() => validateOfferInput({ priceSar: "2", note: "" }), DomainValidationError);
 });
 
-test("يتحقق من حقول الشحنة الأساسية", () => {
+test("يتحقق من الوزن وموقعي الاستلام والتسليم", () => {
   const valid = validateShipmentInput({
     fromCity: "جدة",
     toCity: "الرياض",
-    weightKg: "4.5",
-    lengthCm: "30",
-    widthCm: "20",
-    heightCm: "10",
+    pickupLat: "21.543333",
+    pickupLng: "39.172779",
+    pickupNote: "البوابة الرئيسية",
+    deliveryLat: "24.713552",
+    deliveryLng: "46.675296",
+    deliveryNote: "مدخل العمارة",
+    weightKg: "10",
     category: "GIFTS",
     contents: "هدايا عائلية مغلفة بعناية كاملة",
     approximateValueSar: "800",
@@ -52,7 +55,9 @@ test("يتحقق من حقول الشحنة الأساسية", () => {
     recipientName: "عبدالله",
     recipientPhone: "0500000000",
   });
-  assert.equal(valid.weightKg, 4.5);
-  assert.equal(valid.fromCity, "جدة");
-  assert.throws(() => validateShipmentInput({ ...valid, fromCity: "الرياض", requestedDeliveryAt: "2099-08-24T12:00:00Z" }), DomainValidationError);
+  assert.equal(valid.weightKg, 10);
+  assert.equal(valid.pickupLat, 21.543333);
+  assert.equal(valid.deliveryLng, 46.675296);
+  assert.throws(() => validateShipmentInput({ ...valid, deliveryLat: "", requestedDeliveryAt: "2099-08-24T12:00:00Z" }), DomainValidationError);
+  assert.throws(() => validateShipmentInput({ ...valid, weightKg: "0.1", requestedDeliveryAt: "2099-08-24T12:00:00Z" }), DomainValidationError);
 });

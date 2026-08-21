@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { createSession, destroySession, hashPassword, requireUser, verifyPassword } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { DomainValidationError } from "@/lib/domain";
+import { clientAddress, enforceRateLimit } from "@/lib/rate-limit";
 import {
   acceptOffer,
   advanceShipment,
@@ -32,14 +33,24 @@ export async function registerAction(formData: FormData) {
     const email = String(formData.get("email") ?? "").trim().toLowerCase();
     const phone = String(formData.get("phone") ?? "").trim();
     const password = String(formData.get("password") ?? "");
-    const role = String(formData.get("role") ?? "BOTH") as AccountRole;
-    if (name.length < 2) throw new DomainValidationError(["الاسم مطلوب"]);
-    if (!/^\S+@\S+\.\S+$/.test(email)) throw new DomainValidationError(["البريد الإلكتروني غير صالح"]);
+    const ip = await clientAddress();
+    enforceRateLimit(`register:ip:${ip}`, 5, 60 * 60 * 1000, "تم تجاوز عدد محاولات إنشاء الحساب. حاول لاحقًا");
+
+    if (name.length < 2 || name.length > 120) throw new DomainValidationError(["الاسم يجب أن يكون بين حرفين و120 حرفًا"]);
+    if (email.length > 254 || !/^\S+@\S+\.\S+$/.test(email)) throw new DomainValidationError(["البريد الإلكتروني غير صالح"]);
     if (phone && !/^05\d{8}$/.test(phone)) throw new DomainValidationError(["رقم الجوال غير صالح"]);
-    if (password.length < 8) throw new DomainValidationError(["كلمة المرور يجب ألا تقل عن 8 أحرف"]);
-    if (!Object.values(AccountRole).includes(role)) throw new DomainValidationError(["نوع الحساب غير صالح"]);
+    if (password.length < 8 || password.length > 128) throw new DomainValidationError(["كلمة المرور يجب أن تكون بين 8 و128 حرفًا"]);
     if (await db.user.findUnique({ where: { email } })) throw new DomainValidationError(["البريد الإلكتروني مسجل مسبقًا"]);
-    const user = await db.user.create({ data: { name, email, phone: phone || null, role, passwordHash: await hashPassword(password) } });
+
+    const user = await db.user.create({
+      data: {
+        name,
+        email,
+        phone: phone || null,
+        role: AccountRole.BOTH,
+        passwordHash: await hashPassword(password),
+      },
+    });
     await createSession(user.id);
   } catch (error) {
     destination = withError("/auth?tab=register", messageFrom(error));
@@ -52,6 +63,11 @@ export async function loginAction(formData: FormData) {
   try {
     const email = String(formData.get("email") ?? "").trim().toLowerCase();
     const password = String(formData.get("password") ?? "");
+    const ip = await clientAddress();
+    enforceRateLimit(`login:ip:${ip}`, 30, 10 * 60 * 1000, "محاولات دخول كثيرة. حاول بعد عدة دقائق");
+    enforceRateLimit(`login:account:${email.slice(0, 254)}`, 10, 10 * 60 * 1000, "محاولات دخول كثيرة لهذا الحساب. حاول بعد عدة دقائق");
+
+    if (!email || email.length > 254 || password.length > 128) throw new DomainValidationError(["البريد أو كلمة المرور غير صحيحة"]);
     const user = await db.user.findUnique({ where: { email } });
     if (!user || !(await verifyPassword(password, user.passwordHash))) throw new DomainValidationError(["البريد أو كلمة المرور غير صحيحة"]);
     await createSession(user.id);
@@ -158,9 +174,10 @@ export async function advanceShipmentAction(formData: FormData) {
 }
 
 export async function sendOtpAction(formData: FormData) {
-  const token = String(formData.get("token") ?? "");
-  let destination = `/handover/${token}`;
+  const token = String(formData.get("token") ?? "").trim();
+  let destination = `/handover/${encodeURIComponent(token)}`;
   try {
+    if (!token || token.length > 128) throw new DomainValidationError(["رابط التسليم غير صالح"]);
     const demoOtp = await issueDeliveryOtp(token);
     const query = new URLSearchParams({ success: "تم إرسال رمز الاستلام إلى جوال المستلم" });
     if (demoOtp) query.set("demoOtp", demoOtp);
@@ -172,9 +189,10 @@ export async function sendOtpAction(formData: FormData) {
 }
 
 export async function completeDeliveryAction(formData: FormData) {
-  const token = String(formData.get("token") ?? "");
-  let destination = `/handover/${token}`;
+  const token = String(formData.get("token") ?? "").trim();
+  let destination = `/handover/${encodeURIComponent(token)}`;
   try {
+    if (!token || token.length > 128) throw new DomainValidationError(["رابط التسليم غير صالح"]);
     const shipmentId = await completeDelivery(token, String(formData.get("otp") ?? ""));
     revalidatePath(`/shipments/${shipmentId}`);
     destination += "?delivered=1";

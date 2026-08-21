@@ -8,18 +8,40 @@ export async function getTravelerMatchesForTrip(tripId: string, travelerId: stri
   if (!trip) throw new DomainValidationError(["الرحلة غير موجودة"]);
   if (trip.departureAt <= new Date()) return [];
 
-  // Fetch lightweight candidates by weight/status, then apply ordered route matching in application code.
-  // This supports road trips with multiple intermediate stations without changing the production DB schema.
   const candidates = await db.shipment.findMany({
     where: {
       senderId: { not: travelerId },
       weightKg: { lte: trip.availableWeightKg },
       status: { in: [ShipmentStatus.NEW, ShipmentStatus.RECEIVING_OFFERS] },
     },
-    include: {
-      sender: true,
-      photos: { where: { kind: PhotoKind.ORIGINAL } },
-      offers: { where: { travelerId } },
+    select: {
+      id: true,
+      refCode: true,
+      senderId: true,
+      fromCity: true,
+      toCity: true,
+      transportPreference: true,
+      weightKg: true,
+      category: true,
+      contents: true,
+      requestedDeliveryAt: true,
+      status: true,
+      createdAt: true,
+      sender: {
+        select: {
+          id: true,
+          name: true,
+          ratingsReceived: { select: { score: true } },
+        },
+      },
+      photos: {
+        where: { kind: PhotoKind.ORIGINAL },
+        select: { id: true, kind: true, url: true, caption: true },
+      },
+      offers: {
+        where: { travelerId },
+        select: { id: true, tripId: true, priceSar: true, note: true, status: true, createdAt: true, updatedAt: true },
+      },
     },
     orderBy: { createdAt: "desc" },
     take: 250,

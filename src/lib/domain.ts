@@ -172,7 +172,6 @@ export function isTripMatch(trip: MatchableTrip, shipment: MatchableShipment, no
     normalizeCity(trip.fromCity) === normalizeCity(shipment.fromCity) &&
     normalizeCity(trip.toCity) === normalizeCity(shipment.toCity) &&
     trip.departureAt > now &&
-    shipment.requestedDeliveryAt <= trip.departureAt &&
     trip.availableWeightKg >= shipment.weightKg &&
     (!trip.status || trip.status === "OPEN") &&
     (!shipment.status || ["NEW", "RECEIVING_OFFERS"].includes(shipment.status))

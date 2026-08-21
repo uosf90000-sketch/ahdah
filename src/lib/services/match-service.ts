@@ -37,6 +37,8 @@ export async function getTravelerMatchesForTrip(tripId: string, travelerId: stri
       photos: {
         where: { kind: PhotoKind.ORIGINAL },
         select: { id: true, kind: true, url: true, caption: true },
+        orderBy: { createdAt: "asc" },
+        take: 1,
       },
       offers: {
         where: { travelerId },

@@ -1,12 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, CalendarDays, Car, MapPin, PackageSearch, Plane, Scale } from "lucide-react";
+import { ArrowLeft, CalendarDays, Car, MapPin, PackageSearch, Plane, Route as RouteIcon, Scale } from "lucide-react";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { CATEGORY_LABELS, formatDate } from "@/lib/domain";
 import { getTravelerMatchesForTrip } from "@/lib/services/match-service";
-import { isRoadTrip, tripRouteCities } from "@/lib/trip-route";
+import { decodeItinerary, isMixedTrip, isRoadTrip, tripRouteCities, tripTransportLabel } from "@/lib/trip-route";
 import { createOfferAction } from "@/app/actions";
 import { MessageBanner } from "@/components/message-banner";
 import { SubmitButton } from "@/components/submit-button";
@@ -20,36 +20,51 @@ export default async function TripDetailPage({ params, searchParams }: { params:
   const trip = await db.trip.findFirst({ where: { id, travelerId: user.id } });
   if (!trip) notFound();
   const matches = await getTravelerMatchesForTrip(trip.id, user.id);
+  const itinerary = decodeItinerary(trip);
+  const mixed = isMixedTrip(trip);
   const road = isRoadTrip(trip);
   const route = tripRouteCities(trip);
-  const TravelIcon = road ? Car : Plane;
+  const TravelIcon = mixed ? RouteIcon : road ? Car : Plane;
+  const travelLabel = tripTransportLabel(trip);
 
   return (
     <div className="page-wrap section-space">
       <MessageBanner error={query.error} success={query.success} />
       <section className="mb-8 overflow-hidden rounded-[2rem] bg-ink p-6 text-white shadow-card sm:p-8">
         <div className="mb-7 flex items-start justify-between gap-4">
-          <div><span className="text-xs font-bold text-blue-200">{road ? "رحلة على الطريق" : "رحلتك الجوية"}</span><h1 className="mt-2 text-3xl font-bold">{trip.fromCity} ← {trip.toCity}</h1></div>
+          <div><span className="text-xs font-bold text-blue-200">{mixed ? "رحلة متعددة المراحل" : road ? "رحلة على الطريق" : "رحلة جوية"}</span><h1 className="mt-2 text-3xl font-bold">{trip.fromCity} ← {trip.toCity}</h1></div>
           <TravelIcon className="text-blue-200" size={34} />
         </div>
 
-        {road && (
+        {route.length > 2 && (
           <div className="mb-5 rounded-2xl border border-white/10 bg-white/[.08] p-4">
             <p className="text-[11px] font-medium text-slate-300">المسار الكامل</p>
             <p className="mt-2 text-sm font-black leading-8 text-blue-100">{route.join(" ← ")}</p>
           </div>
         )}
 
+        {itinerary.length > 1 && (
+          <div className="mb-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {itinerary.map((leg, index) => (
+              <div className="rounded-2xl border border-white/10 bg-white/[.06] p-3" key={`${leg.from}-${leg.to}-${index}`}>
+                <p className="text-[10px] font-bold text-blue-200">المرحلة {index + 1} · {leg.mode === "AIR" ? "✈️ طيران" : "🚗 طريق"}</p>
+                <p className="mt-1 text-sm font-black">{leg.from} ← {leg.to}</p>
+                {leg.mode === "AIR" && <p className="mt-1 text-[11px] text-slate-300">{leg.airline}{leg.flightNumber ? ` · ${leg.flightNumber}` : ""}</p>}
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="grid gap-3 sm:grid-cols-4">
-          <Fact Icon={CalendarDays} label="الموعد" value={formatDate(trip.departureAt)} />
-          <Fact Icon={TravelIcon} label="طريقة التنقل" value={road ? "على الطريق" : trip.airline} />
+          <Fact Icon={CalendarDays} label="بداية الرحلة" value={formatDate(trip.departureAt)} />
+          <Fact Icon={TravelIcon} label="طريقة التنقل" value={travelLabel} />
           <Fact Icon={Scale} label="الوزن المتاح" value={`${trip.availableWeightKg.toString()} كجم`} />
-          <Fact Icon={MapPin} label={road ? "عدد محطات المسار" : "رقم الرحلة"} value={road ? `${route.length} مدن` : (trip.flightNumber || "غير مضاف")} />
+          <Fact Icon={MapPin} label="نقاط المسار" value={`${route.length} نقاط`} />
         </div>
       </section>
 
       <div className="mb-5 flex items-end justify-between">
-        <div><p className="eyebrow mb-2">مطابقة ذكية</p><h2 className="text-2xl font-bold">{matches.length} عُهد مناسبة لرحلتك</h2><p className="muted mt-2">{road ? "أي طلب يبدأ وينتهي داخل مسارك بالترتيب الصحيح يظهر هنا." : "تظهر الطلبات المطابقة للمسار والوزن."}</p></div>
+        <div><p className="eyebrow mb-2">مطابقة ذكية</p><h2 className="text-2xl font-bold">{matches.length} عُهد مناسبة لرحلتك</h2><p className="muted mt-2">أي طلب يبدأ من نقطة في مسارك وينتهي عند نقطة لاحقة يظهر لك، حتى لو مر عبر طيران ثم طريق.</p></div>
         <Link href="/matches" className="hidden min-h-11 items-center text-sm font-bold text-palm-700 sm:inline-flex">كل المطابقات <ArrowLeft className="inline" size={15} /></Link>
       </div>
 
@@ -68,9 +83,7 @@ export default async function TripDetailPage({ params, searchParams }: { params:
                   <div className="rounded-xl bg-slate-50 p-3 text-xs font-bold text-slate-600"><MapPin className="ml-1 inline text-palm-600" size={14} /> {shipment.fromCity} ← {shipment.toCity}</div>
                   <p className="mt-3 line-clamp-3 text-sm leading-7 text-slate-600">{shipment.contents}</p>
                   <p className="mt-3 text-xs font-bold text-slate-500">وقت المرسل للتنسيق: {formatDate(shipment.requestedDeliveryAt)}</p>
-
                   {ownOffer && <div className="mt-4 rounded-xl bg-palm-50 p-3 text-xs font-bold text-palm-700">لديك عرض سابق على هذا الطلب. إرسال سعر جديد سيحدّث عرضك.</div>}
-
                   <form action={createOfferAction} className="mt-4 space-y-3 border-t border-slate-100 pt-4">
                     <input type="hidden" name="shipmentId" value={shipment.id} />
                     <input type="hidden" name="tripId" value={trip.id} />
@@ -84,7 +97,7 @@ export default async function TripDetailPage({ params, searchParams }: { params:
           })}
         </div>
       ) : (
-        <div className="card py-14 text-center"><PackageSearch className="mx-auto mb-4 text-palm-600" size={44} /><h3 className="text-xl font-black">لا توجد عُهد من مستخدمين آخرين مطابقة الآن</h3><p className="muted mx-auto mt-2 max-w-md">لن نعرض لك طلبات الشحن التي أنشأتها أنت. {road ? "سنفحص كل محطة في مسارك ونظهر الطلب المناسب فور توفره." : "تظهر هنا فقط طلبات مستخدمين آخرين المطابقة لمسارك ووزنك."}</p></div>
+        <div className="card py-14 text-center"><PackageSearch className="mx-auto mb-4 text-palm-600" size={44} /><h3 className="text-xl font-black">لا توجد عُهد من مستخدمين آخرين مطابقة الآن</h3><p className="muted mx-auto mt-2 max-w-md">سنفحص كل نقطة في مسارك، سواء كانت مرحلة طيران أو طريق، ونظهر الطلب المناسب فور توفره.</p></div>
       )}
     </div>
   );

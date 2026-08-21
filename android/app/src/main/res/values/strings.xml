@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">عهدتك</string>
+    <string name="title_activity_main">عهدتك</string>
+    <string name="package_name">sa.ahdatuk.app</string>
+    <string name="custom_url_scheme">sa.ahdatuk.app</string>
+</resources>

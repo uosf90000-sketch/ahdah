@@ -7,6 +7,7 @@ export async function getTravelerMatchesForTrip(tripId: string, travelerId: stri
   if (!trip) throw new DomainValidationError(["الرحلة غير موجودة"]);
   if (trip.departureAt <= new Date()) return [];
 
+  // Sender timing is coordination information only. Matching is route + available weight.
   return db.shipment.findMany({
     where: {
       senderId: { not: travelerId },

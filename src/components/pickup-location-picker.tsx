@@ -2,6 +2,8 @@
 
 import { LocateFixed, LoaderCircle, MapPin, ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Capacitor } from "@capacitor/core";
+import { Geolocation } from "@capacitor/geolocation";
 
 export type PickupCoordinates = { lat: number; lng: number };
 export type LocationCoordinates = PickupCoordinates;
@@ -174,27 +176,48 @@ export function PickupLocationPicker({
     }
   }, [value]);
 
-  function useCurrentLocation() {
+  async function useCurrentLocation() {
     setGeoError("");
-    if (!navigator.geolocation) {
-      setGeoError("جهازك لا يدعم تحديد الموقع تلقائيًا. اضغط موقعك على الخريطة.");
-      return;
-    }
-
     setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
+
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const permission = await Geolocation.checkPermissions();
+        if (permission.location !== "granted" && permission.coarseLocation !== "granted") {
+          const requested = await Geolocation.requestPermissions({ permissions: ["location"] });
+          if (requested.location !== "granted" && requested.coarseLocation !== "granted") {
+            throw new Error("location permission denied");
+          }
+        }
+        const position = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 12_000,
+          maximumAge: 30_000,
+        });
         const next = { lat: position.coords.latitude, lng: position.coords.longitude };
         onChange(next);
         mapRef.current?.setView([next.lat, next.lng], 17);
-        setLocating(false);
-      },
-      () => {
-        setGeoError("تعذر الوصول لموقعك. اسمح للموقع باستخدام GPS أو حدده يدويًا على الخريطة.");
-        setLocating(false);
-      },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 },
-    );
+        return;
+      }
+
+      if (!navigator.geolocation) throw new Error("geolocation unavailable");
+      await new Promise<void>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const next = { lat: position.coords.latitude, lng: position.coords.longitude };
+            onChange(next);
+            mapRef.current?.setView([next.lat, next.lng], 17);
+            resolve();
+          },
+          reject,
+          { enableHighAccuracy: true, timeout: 12_000, maximumAge: 30_000 },
+        );
+      });
+    } catch {
+      setGeoError("تعذر الوصول لموقعك. اسمح لتطبيق عهدتك باستخدام الموقع أو حدده يدويًا على الخريطة.");
+    } finally {
+      setLocating(false);
+    }
   }
 
   return (

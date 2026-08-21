@@ -3,7 +3,7 @@ import { ArrowLeft, CheckCircle2, KeyRound, PackageCheck, Plane, ShieldCheck, Us
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { googleOAuthConfigured } from "@/lib/google-oauth";
-import { loginAction, registerAction } from "@/app/actions";
+import { googleRegisterAction, loginAction, registerAction } from "@/app/actions";
 import { MessageBanner } from "@/components/message-banner";
 import { SubmitButton } from "@/components/submit-button";
 import { PasswordField } from "@/components/password-field";
@@ -56,9 +56,18 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
 
           {googleEnabled && (
             <>
-              <Link href="/auth/google" className="mb-5 flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl border border-slate-300 bg-white px-5 text-sm font-semibold text-ink transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100">
-                <GoogleIcon /> المتابعة باستخدام Google
-              </Link>
+              {register ? (
+                <form action={googleRegisterAction} className="mb-5 space-y-4">
+                  <PolicyConsentCheckbox id="google-policy-consent" />
+                  <SubmitButton className="flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl border border-slate-300 bg-white px-5 text-sm font-semibold text-ink transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100" pendingText="جاري فتح Google...">
+                    <GoogleIcon /> التسجيل باستخدام Google
+                  </SubmitButton>
+                </form>
+              ) : (
+                <Link href="/auth/google" className="mb-5 flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl border border-slate-300 bg-white px-5 text-sm font-semibold text-ink transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100">
+                  <GoogleIcon /> المتابعة باستخدام Google
+                </Link>
+              )}
               <div className="mb-5 flex items-center gap-3 text-xs text-slate-400"><span className="h-px flex-1 bg-slate-200" /><span>أو باستخدام البريد</span><span className="h-px flex-1 bg-slate-200" /></div>
             </>
           )}
@@ -71,6 +80,7 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
                 <div><label className="label" htmlFor="phone">رقم الجوال</label><input className="input" id="phone" name="phone" autoComplete="tel" inputMode="tel" placeholder="05xxxxxxxx" dir="ltr" /></div>
               </div>
               <PasswordField id="register-password" name="password" label="كلمة المرور" autoComplete="new-password" minLength={8} help="8 أحرف على الأقل" />
+              <PolicyConsentCheckbox id="email-policy-consent" />
               <SubmitButton className="btn-primary w-full" pendingText="جاري إنشاء الحساب..."><UserPlus aria-hidden="true" size={18} /> إنشاء الحساب</SubmitButton>
             </form>
           ) : (
@@ -83,6 +93,17 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
         </section>
       </div>
     </div>
+  );
+}
+
+function PolicyConsentCheckbox({ id }: { id: string }) {
+  return (
+    <label htmlFor={id} className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-700 transition hover:border-palm-300">
+      <input id={id} name="acceptPolicies" type="checkbox" required className="mt-1 h-5 w-5 shrink-0 accent-palm-600" />
+      <span>
+        أوافق على <Link href="/legal/terms" target="_blank" rel="noreferrer" className="font-black text-palm-700 underline underline-offset-2">الشروط والأحكام</Link> و<Link href="/legal/privacy" target="_blank" rel="noreferrer" className="font-black text-palm-700 underline underline-offset-2">سياسة الخصوصية</Link> و<Link href="/legal/prohibited-items" target="_blank" rel="noreferrer" className="font-black text-palm-700 underline underline-offset-2">سياسة المحتويات المحظورة</Link> وسياسات استخدام عهدتك.
+      </span>
+    </label>
   );
 }
 

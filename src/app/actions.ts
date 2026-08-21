@@ -2,12 +2,20 @@
 
 import { AccountRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createSession, destroySession, hashPassword, requireUser, verifyPassword } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { DomainValidationError } from "@/lib/domain";
+import {
+  CURRENT_POLICY_VERSION,
+  POLICY_CONSENT_COOKIE,
+  POLICY_CONSENT_MAX_AGE,
+  policyConsentAccepted,
+} from "@/lib/policy-consent";
 import { notifyAcceptedTraveler, notifyShipmentSender } from "@/lib/push-service";
 import { clientAddress, enforceRateLimit } from "@/lib/rate-limit";
+import { ensureRuntimeSchema } from "@/lib/runtime-schema";
 import {
   createRating,
   createShipmentFromForm,
@@ -29,9 +37,18 @@ function messageFrom(error: unknown) {
 
 const withError = (path: string, message: string) => `${path}${path.includes("?") ? "&" : "?"}error=${encodeURIComponent(message)}`;
 
+function requirePolicyConsent(formData: FormData) {
+  if (!policyConsentAccepted(formData)) {
+    throw new DomainValidationError(["يجب الموافقة على الشروط والأحكام وسياسة الخصوصية قبل إنشاء الحساب"]);
+  }
+}
+
 export async function registerAction(formData: FormData) {
   let destination = "/dashboard";
   try {
+    requirePolicyConsent(formData);
+    await ensureRuntimeSchema();
+
     const name = String(formData.get("name") ?? "").trim();
     const email = String(formData.get("email") ?? "").trim().toLowerCase();
     const phone = String(formData.get("phone") ?? "").trim();
@@ -45,6 +62,7 @@ export async function registerAction(formData: FormData) {
     if (password.length < 8 || password.length > 128) throw new DomainValidationError(["كلمة المرور يجب أن تكون بين 8 و128 حرفًا"]);
     if (await db.user.findUnique({ where: { email } })) throw new DomainValidationError(["البريد الإلكتروني مسجل مسبقًا"]);
 
+    const acceptedAt = new Date();
     const user = await db.user.create({
       data: {
         name,
@@ -52,11 +70,32 @@ export async function registerAction(formData: FormData) {
         phone: phone || null,
         role: AccountRole.BOTH,
         passwordHash: await hashPassword(password),
+        policyAcceptedAt: acceptedAt,
+        policyVersion: CURRENT_POLICY_VERSION,
       },
     });
     await createSession(user.id);
   } catch (error) {
     destination = withError("/auth?tab=register", messageFrom(error));
+  }
+  redirect(destination);
+}
+
+export async function googleRegisterAction(formData: FormData) {
+  let destination = "/auth?tab=register";
+  try {
+    requirePolicyConsent(formData);
+    const cookieStore = await cookies();
+    cookieStore.set(POLICY_CONSENT_COOKIE, CURRENT_POLICY_VERSION, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: POLICY_CONSENT_MAX_AGE,
+    });
+    destination = "/auth/google";
+  } catch (error) {
+    destination = withError(destination, messageFrom(error));
   }
   redirect(destination);
 }

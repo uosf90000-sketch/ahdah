@@ -20,6 +20,9 @@
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
+  "overrides": {
+    "deepmerge-ts": "8.0.1"
+  },
   "dependencies": {
     "@prisma/client": "6.19.3",
     "lucide-react": "0.468.0",

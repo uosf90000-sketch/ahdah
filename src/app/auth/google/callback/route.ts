@@ -9,11 +9,16 @@ import {
   GOOGLE_STATE_COOKIE,
   GOOGLE_VERIFIER_COOKIE,
 } from "@/lib/google-oauth";
+import {
+  CURRENT_POLICY_VERSION,
+  POLICY_CONSENT_COOKIE,
+} from "@/lib/policy-consent";
 import { getPublicOrigin } from "@/lib/public-origin";
 import { ensureRuntimeSchema } from "@/lib/runtime-schema";
 
-function authError(request: NextRequest, message: string) {
+function authError(request: NextRequest, message: string, register = false) {
   const url = new URL("/auth", getPublicOrigin(request));
+  if (register) url.searchParams.set("tab", "register");
   url.searchParams.set("error", message);
   return NextResponse.redirect(url);
 }
@@ -27,6 +32,7 @@ export async function GET(request: NextRequest) {
   const state = request.nextUrl.searchParams.get("state");
   const storedState = request.cookies.get(GOOGLE_STATE_COOKIE)?.value;
   const verifier = request.cookies.get(GOOGLE_VERIFIER_COOKIE)?.value;
+  const policyConsent = request.cookies.get(POLICY_CONSENT_COOKIE)?.value;
   if (!code || !state || !storedState || !verifier || state !== storedState) {
     return authError(request, "انتهت محاولة تسجيل الدخول أو لم تعد صالحة. حاول مرة أخرى");
   }
@@ -52,6 +58,10 @@ export async function GET(request: NextRequest) {
         });
       }
     } else {
+      if (policyConsent !== CURRENT_POLICY_VERSION) {
+        return authError(request, "لإنشاء حساب جديد باستخدام Google يجب الموافقة على سياسات عهدتك أولًا", true);
+      }
+
       user = await db.user.create({
         data: {
           name: profile.name?.trim() || profile.email.split("@")[0],
@@ -60,6 +70,8 @@ export async function GET(request: NextRequest) {
           passwordHash: "oauth:google",
           googleSubject: profile.sub,
           emailVerifiedAt: new Date(),
+          policyAcceptedAt: new Date(),
+          policyVersion: CURRENT_POLICY_VERSION,
         },
       });
     }
@@ -73,6 +85,7 @@ export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
     cookieStore.delete(GOOGLE_STATE_COOKIE);
     cookieStore.delete(GOOGLE_VERIFIER_COOKIE);
+    cookieStore.delete(POLICY_CONSENT_COOKIE);
     await createSession(userId);
   } catch (error) {
     console.error(error);

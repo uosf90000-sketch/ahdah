@@ -46,7 +46,7 @@ export default async function ConversationPage({
 
         <div className="border-b border-slate-100 bg-slate-50 px-4 py-3 text-xs leading-6 text-slate-600 sm:px-5">
           <ShieldCheck aria-hidden="true" className="ml-1 inline text-palm-600" size={15} />
-          لا يظهر رقم جوال المستلم هنا. استخدم المحادثة لتنسيق الاستلام والتسليم داخل عُهدة.
+          لا يظهر رقم جوال المستلم هنا. استخدم المحادثة لتنسيق الاستلام والتسليم داخل عهدتك.
         </div>
 
         <MessageBanner error={query.error} />

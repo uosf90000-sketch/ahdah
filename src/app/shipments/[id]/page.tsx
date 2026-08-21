@@ -55,7 +55,7 @@ export default async function ShipmentDetailPage({ params, searchParams }: { par
       fromCity: shipment.fromCity,
       toCity: shipment.toCity,
       availableWeightKg: { gte: shipment.weightKg },
-      departureAt: { gt: new Date(), lte: shipment.requestedDeliveryAt },
+      departureAt: { gt: new Date() },
     },
     orderBy: { departureAt: "asc" },
   }) : [];
@@ -97,7 +97,7 @@ export default async function ShipmentDetailPage({ params, searchParams }: { par
             <h2 className="mb-5 text-xl font-black">تفاصيل العُهدة</h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <Fact Icon={MapPin} label="المسار" value={`${shipment.fromCity} ← ${shipment.toCity}`} />
-              <Fact Icon={CalendarDays} label="موعد التسليم" value={formatDate(shipment.requestedDeliveryAt)} />
+              <Fact Icon={CalendarDays} label="وقت المرسل للتنسيق" value={formatDate(shipment.requestedDeliveryAt)} />
               <Fact Icon={Scale} label="الوزن" value={`${shipment.weightKg.toString()} كجم`} />
               <Fact Icon={Box} label="الأبعاد" value={`${shipment.lengthCm} × ${shipment.widthCm} × ${shipment.heightCm} سم`} />
               <Fact Icon={ShieldCheck} label="القيمة التقريبية" value={formatMoney(shipment.approximateValueSar)} />
@@ -143,7 +143,7 @@ export default async function ShipmentDetailPage({ params, searchParams }: { par
 
           {!isSender && isOpen && (
             <section className="card" id="offer">
-              <p className="eyebrow mb-2">قدّم سعرك</p><h2 className="mb-2 text-xl font-black">هل تناسبك هذه العُهدة؟</h2><p className="muted mb-5">راجع المحتويات والصور أولًا. بعد قبول العرض ستعاينها فعليًا قبل حملها.</p>
+              <p className="eyebrow mb-2">قدّم سعرك</p><h2 className="mb-2 text-xl font-black">هل تناسبك هذه العُهدة؟</h2><p className="muted mb-5">راجع المحتويات والصور أولًا. وقت المرسل ووقت رحلتك للتنسيق بينكما ولا يمنعان المطابقة.</p>
               {compatibleTrips.length ? (
                 <form action={createOfferAction} className="space-y-5">
                   <input type="hidden" name="shipmentId" value={shipment.id} />
@@ -152,7 +152,7 @@ export default async function ShipmentDetailPage({ params, searchParams }: { par
                   <div><label className="label" htmlFor="note">ملاحظة للمرسل (اختياري)</label><textarea className="textarea" id="note" name="note" maxLength={500} placeholder="مكان ووقت الاستلام المناسب أو أي تفاصيل مهمة" /></div>
                   <SubmitButton className="btn-primary w-full" pendingText="جاري إرسال العرض...">إرسال العرض</SubmitButton>
                 </form>
-              ) : <div className="rounded-2xl bg-amber-50 p-5 text-sm leading-7 text-amber-900"><CircleAlert className="ml-2 inline" size={18} /> لا توجد رحلة لك تطابق المسار والوزن والموعد. <Link href="/trips/new" className="font-black underline">أضف رحلة مناسبة</Link>.</div>}
+              ) : <div className="rounded-2xl bg-amber-50 p-5 text-sm leading-7 text-amber-900"><CircleAlert className="ml-2 inline" size={18} /> لا توجد رحلة لك تطابق المسار والوزن. <Link href="/trips/new" className="font-black underline">أضف رحلة مناسبة</Link>.</div>}
             </section>
           )}
 
@@ -188,7 +188,7 @@ export default async function ShipmentDetailPage({ params, searchParams }: { par
               <div className="space-y-3 text-sm"><Row label="السعر" value={formatMoney(shipment.acceptedOffer.priceSar)} /><Row label="الطيران" value={shipment.acceptedOffer.trip.airline} /><Row label="موعد الرحلة" value={formatDate(shipment.acceptedOffer.trip.departureAt)} /><Row label="تقييم المسافر" value={ratingAverage(shipment.acceptedOffer.traveler.ratingsReceived)} /></div>
               {shipment.payment && <p className="mt-4 rounded-xl bg-palm-50 p-3 text-xs font-bold text-palm-700">الدفع التجريبي: {shipment.payment.status === "CAPTURED" ? "تم تحرير المبلغ" : "المبلغ محجوز بأمان"}</p>}
             </section>
-          ) : <section className="card-soft"><Plane className="mb-4 text-palm-600" /><h2 className="text-lg font-black">بانتظار المسافر المناسب</h2><p className="muted mt-2">نعرض طلبك فقط للرحلات المطابقة للمسار والوزن والموعد.</p></section>}
+          ) : <section className="card-soft"><Plane className="mb-4 text-palm-600" /><h2 className="text-lg font-black">بانتظار المسافر المناسب</h2><p className="muted mt-2">نعرض طلبك للرحلات المطابقة للمسار والوزن. المواعيد تظهر للتنسيق بين الطرفين.</p></section>}
 
           {shipment.acceptedOffer && (
             <section className="card text-center">

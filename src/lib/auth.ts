@@ -3,6 +3,7 @@ import { promisify } from "node:util";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
+import { ensureRuntimeSchema } from "@/lib/runtime-schema";
 
 const scrypt = promisify(scryptCallback);
 const SESSION_COOKIE = "ahdah_session";
@@ -31,6 +32,7 @@ function sessionSecret() {
 const tokenHash = (token: string) => createHmac("sha256", sessionSecret()).update(token).digest("hex");
 
 export async function createSession(userId: string) {
+  await ensureRuntimeSchema();
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
   await db.session.create({ data: { userId, tokenHash: tokenHash(token), expiresAt } });
@@ -54,6 +56,7 @@ export async function destroySession() {
 export async function getCurrentUser() {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
+  await ensureRuntimeSchema();
   const session = await db.session.findUnique({ where: { tokenHash: tokenHash(token) }, include: { user: true } });
   if (!session || session.expiresAt <= new Date()) return null;
   return session.user;

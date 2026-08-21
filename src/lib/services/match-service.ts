@@ -5,6 +5,7 @@ import { DomainValidationError } from "@/lib/domain";
 export async function getTravelerMatchesForTrip(tripId: string, travelerId: string) {
   const trip = await db.trip.findFirst({ where: { id: tripId, travelerId, status: "OPEN" } });
   if (!trip) throw new DomainValidationError(["الرحلة غير موجودة"]);
+  if (trip.departureAt <= new Date()) return [];
 
   return db.shipment.findMany({
     where: {

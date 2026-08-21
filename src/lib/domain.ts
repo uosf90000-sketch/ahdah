@@ -82,9 +82,6 @@ export function validateShipmentInput(input: FormData | Record<string, unknown>)
     pickupLng: Number(pickupLngRaw),
     pickupNote: textValue(input, "pickupNote"),
     weightKg: numberValue(input, "weightKg"),
-    lengthCm: numberValue(input, "lengthCm"),
-    widthCm: numberValue(input, "widthCm"),
-    heightCm: numberValue(input, "heightCm"),
     category: textValue(input, "category"),
     contents: textValue(input, "contents"),
     approximateValueSar: numberValue(input, "approximateValueSar"),
@@ -104,10 +101,7 @@ export function validateShipmentInput(input: FormData | Record<string, unknown>)
   if (pickupLngRaw && (!(data.pickupLng >= -180) || !(data.pickupLng <= 180))) issues.push("خط طول موقع الاستلام غير صالح");
   if (data.pickupNote.length > 300) issues.push("ملاحظة موقع الاستلام طويلة جدًا");
   if (data.fromCity && data.fromCity === data.toCity) issues.push("مدينة الإرسال والوصول يجب أن تكونا مختلفتين");
-  if (!(data.weightKg > 0 && data.weightKg <= 50)) issues.push("الوزن يجب أن يكون بين 0.1 و50 كجم");
-  for (const [value, label] of [[data.lengthCm, "الطول"], [data.widthCm, "العرض"], [data.heightCm, "الارتفاع"]] as const) {
-    if (!(value > 0 && value <= 200)) issues.push(`${label} يجب أن يكون بين 1 و200 سم`);
-  }
+  if (!(Number.isInteger(data.weightKg) && data.weightKg >= 1 && data.weightKg <= 50)) issues.push("الوزن يجب أن يكون عددًا صحيحًا بين 1 و50 كجم");
   if (!(data.approximateValueSar >= 0 && data.approximateValueSar <= 100000)) issues.push("قيمة الشحنة غير صالحة");
   if (data.contents.length < 15) issues.push("اكتب وصفًا أوضح للمحتويات (15 حرفًا على الأقل)");
   if (!/^05\d{8}$/.test(data.recipientPhone)) issues.push("رقم المستلم يجب أن يكون رقم جوال سعوديًا مثل 05xxxxxxxx");
@@ -132,7 +126,7 @@ export function validateTripInput(input: FormData | Record<string, unknown>) {
   required(data.toCity, "الوجهة", issues);
   required(data.airline, "شركة الطيران", issues);
   if (data.fromCity === data.toCity) issues.push("مدينة المغادرة والوجهة يجب أن تكونا مختلفتين");
-  if (!(data.availableWeightKg > 0 && data.availableWeightKg <= 50)) issues.push("الوزن المتاح يجب أن يكون بين 0.1 و50 كجم");
+  if (!(Number.isInteger(data.availableWeightKg) && data.availableWeightKg >= 1 && data.availableWeightKg <= 50)) issues.push("الوزن المتاح يجب أن يكون عددًا صحيحًا بين 1 و50 كجم");
   const departureDate = new Date(data.departureAt);
   if (Number.isNaN(departureDate.getTime()) || departureDate <= new Date()) issues.push("تاريخ الرحلة يجب أن يكون في المستقبل");
   if (issues.length) throw new DomainValidationError(issues);

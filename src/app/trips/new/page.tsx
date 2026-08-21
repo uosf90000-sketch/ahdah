@@ -17,7 +17,7 @@ export default async function NewTripPage({ searchParams }: { searchParams: Prom
       <div className="mb-8 max-w-2xl">
         <span className="eyebrow mb-4"><Route size={15} /> للموصل</span>
         <h1 className="title">أضف مسارك كاملًا مهما تغيّرت وسيلة السفر</h1>
-        <p className="muted mt-3">مثال: الرياض ✈️ جدة ثم جدة 🚗 رابغ 🚗 ينبع. نطابق أي عُهدة تقع بين نقطتين بالترتيب الصحيح داخل مسارك.</p>
+        <p className="muted mt-3">أضف مراحل رحلتك بالترتيب، وسنطابق الطلبات المناسبة مع مسارك ووزنك المتاح.</p>
       </div>
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_21rem]">
@@ -30,11 +30,11 @@ export default async function NewTripPage({ searchParams }: { searchParams: Prom
           <span className="eyebrow mb-5"><BadgeCheck size={15} /> مسار مرن</span>
           <h2 className="text-xl font-bold text-ink-950">كيف تعمل المطابقة؟</h2>
           <div className="mt-6 space-y-5">
-            <Info icon={Plane} title="طيران ثم طريق" text="تقدر تجعل مرحلة طيران والمرحلة التالية بالسيارة داخل نفس الرحلة." />
-            <Info icon={Car} title="محطات غير محدودة بقائمة" text="اكتب أي مدينة أو محافظة أو قرية أو مركز أو هجرة تمر بها." />
-            <Info icon={MapPin} title="الترتيب هو الأساس" text="إذا كان المسار الرياض ← جدة ← رابغ ← ينبع، تظهر طلبات الرياض إلى ينبع وجدة إلى ينبع وغيرها." />
+            <Info icon={Plane} title="طيران ثم طريق" text="تقدر تجعل كل مرحلة بوسيلة نقل مختلفة داخل نفس الرحلة." />
+            <Info icon={Car} title="محطات مرنة" text="اكتب أي مدينة أو محافظة أو قرية أو مركز أو هجرة تمر بها." />
+            <Info icon={MapPin} title="الترتيب هو الأساس" text="تظهر الطلبات التي تقع بين نقاط مسارك وبنفس اتجاه الرحلة." />
             <Info icon={CalendarClock} title="أنت تحدد السعر" text="راجع الطلب والوزن ثم قدم عرضك مباشرة من صفحة رحلتك." />
-            <Info icon={LockKeyhole} title="المواقع الدقيقة محمية" text="بعد قبول عرضك يظهر لك موقع الاستلام والتسليم الدقيق." />
+            <Info icon={LockKeyhole} title="المواقع الدقيقة محمية" text="بعد قبول عرضك تجد موقع الاستلام والتسليم داخل المحادثة." />
           </div>
         </aside>
       </div>

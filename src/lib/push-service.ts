@@ -67,55 +67,68 @@ async function accessToken() {
 export async function sendPushToUser(userId: string, payload: PushPayload) {
   const config = firebaseConfig();
   if (!config) return;
-  await ensureRuntimeSchema();
-  const devices = await db.pushDevice.findMany({ where: { userId }, select: { id: true, token: true } });
-  if (!devices.length) return;
-  const bearer = await accessToken();
-  if (!bearer) return;
 
-  await Promise.all(devices.map(async (device) => {
-    try {
-      const response = await fetch(`https://fcm.googleapis.com/v1/projects/${encodeURIComponent(config.projectId)}/messages:send`, {
-        method: "POST",
-        headers: {
-          authorization: `Bearer ${bearer}`,
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          message: {
-            token: device.token,
-            notification: { title: payload.title, body: payload.body },
-            data: payload.href ? { href: payload.href } : undefined,
-            android: { priority: "high" },
-            apns: { payload: { aps: { sound: "default" } } },
+  try {
+    await ensureRuntimeSchema();
+    const devices = await db.pushDevice.findMany({ where: { userId }, select: { id: true, token: true } });
+    if (!devices.length) return;
+    const bearer = await accessToken();
+    if (!bearer) return;
+
+    await Promise.all(devices.map(async (device) => {
+      try {
+        const response = await fetch(`https://fcm.googleapis.com/v1/projects/${encodeURIComponent(config.projectId)}/messages:send`, {
+          method: "POST",
+          headers: {
+            authorization: `Bearer ${bearer}`,
+            "content-type": "application/json",
           },
-        }),
-        cache: "no-store",
-        signal: AbortSignal.timeout(10_000),
-      });
+          body: JSON.stringify({
+            message: {
+              token: device.token,
+              notification: { title: payload.title, body: payload.body },
+              data: payload.href ? { href: payload.href } : undefined,
+              android: { priority: "high" },
+              apns: { payload: { aps: { sound: "default" } } },
+            },
+          }),
+          cache: "no-store",
+          signal: AbortSignal.timeout(10_000),
+        });
 
-      if (response.ok) return;
-      const text = await response.text();
-      if (response.status === 404 || text.includes("UNREGISTERED") || text.includes("registration-token-not-registered")) {
-        await db.pushDevice.deleteMany({ where: { id: device.id } });
-        return;
+        if (response.ok) return;
+        const text = await response.text();
+        if (response.status === 404 || text.includes("UNREGISTERED") || text.includes("registration-token-not-registered")) {
+          await db.pushDevice.deleteMany({ where: { id: device.id } });
+          return;
+        }
+        console.error("FCM send failed", { status: response.status, deviceId: device.id });
+      } catch (error) {
+        console.error("FCM send failed", { deviceId: device.id, error: error instanceof Error ? error.message : "unknown" });
       }
-      console.error("FCM send failed", { status: response.status, deviceId: device.id });
-    } catch (error) {
-      console.error("FCM send failed", { deviceId: device.id, error: error instanceof Error ? error.message : "unknown" });
-    }
-  }));
+    }));
+  } catch (error) {
+    console.error("FCM notification skipped", { error: error instanceof Error ? error.message : "unknown" });
+  }
 }
 
 export async function notifyShipmentSender(shipmentId: string, payload: PushPayload) {
-  const shipment = await db.shipment.findUnique({ where: { id: shipmentId }, select: { senderId: true } });
-  if (shipment) await sendPushToUser(shipment.senderId, payload);
+  try {
+    const shipment = await db.shipment.findUnique({ where: { id: shipmentId }, select: { senderId: true } });
+    if (shipment) await sendPushToUser(shipment.senderId, payload);
+  } catch (error) {
+    console.error("sender notification skipped", { error: error instanceof Error ? error.message : "unknown" });
+  }
 }
 
 export async function notifyAcceptedTraveler(shipmentId: string, payload: PushPayload) {
-  const shipment = await db.shipment.findUnique({
-    where: { id: shipmentId },
-    select: { acceptedOffer: { select: { travelerId: true } } },
-  });
-  if (shipment?.acceptedOffer) await sendPushToUser(shipment.acceptedOffer.travelerId, payload);
+  try {
+    const shipment = await db.shipment.findUnique({
+      where: { id: shipmentId },
+      select: { acceptedOffer: { select: { travelerId: true } } },
+    });
+    if (shipment?.acceptedOffer) await sendPushToUser(shipment.acceptedOffer.travelerId, payload);
+  } catch (error) {
+    console.error("traveler notification skipped", { error: error instanceof Error ? error.message : "unknown" });
+  }
 }

@@ -10,7 +10,6 @@ import {
   ClipboardCheck,
   MapPin,
   MessageCircle,
-  Navigation,
   PackageCheck,
   Plane,
   QrCode,
@@ -64,10 +63,6 @@ export default async function ShipmentDetailPage({ params, searchParams }: { par
   const originalPhotos = shipment.photos.filter((photo) => photo.kind === "ORIGINAL");
   const inspectionPhotos = shipment.photos.filter((photo) => photo.kind === "INSPECTION");
   const existingRating = shipment.ratings.find((rating) => rating.authorId === user.id);
-  const hasPickupLocation = shipment.pickupLat !== null && shipment.pickupLng !== null;
-  const hasDeliveryLocation = shipment.deliveryLat !== null && shipment.deliveryLng !== null;
-  const hasAnyExactLocation = hasPickupLocation || hasDeliveryLocation;
-  const canSeeExactLocations = isSender || isAcceptedTraveler;
 
   return (
     <div className="page-wrap section-space">
@@ -106,22 +101,6 @@ export default async function ShipmentDetailPage({ params, searchParams }: { par
             </div>
             <div className="mt-5 rounded-2xl bg-slate-50 p-5"><p className="mb-2 text-xs font-bold text-slate-500">وصف المحتويات</p><p className="whitespace-pre-wrap text-sm leading-8 text-slate-700">{shipment.contents}</p></div>
           </section>
-
-          {hasAnyExactLocation && (
-            canSeeExactLocations ? (
-              <div className="space-y-6">
-                {hasPickupLocation && <LocationCard label="موقع الاستلام" lat={shipment.pickupLat!} lng={shipment.pickupLng!} note={shipment.pickupNote} showDirections={isAcceptedTraveler} />}
-                {hasDeliveryLocation && <LocationCard label="موقع التسليم" lat={shipment.deliveryLat!} lng={shipment.deliveryLng!} note={shipment.deliveryNote} showDirections={isAcceptedTraveler} />}
-              </div>
-            ) : (
-              <section className="card-soft">
-                <div className="flex items-start gap-3">
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-palm-700"><ShieldCheck size={20} /></span>
-                  <div><h2 className="text-lg font-black">موقع الاستلام والتسليم محمي</h2><p className="muted mt-2">ترى الآن مدينتي الإرسال والوصول فقط. تظهر المواقع الدقيقة للموصل بعد أن يقبل المرسل عرضه.</p></div>
-                </div>
-              </section>
-            )
-          )}
 
           <PhotoSection title="صور المرسل للمحتويات" photos={originalPhotos} />
           {inspectionPhotos.length > 0 && <PhotoSection title="صور فحص العُهدة" photos={inspectionPhotos} verified />}
@@ -210,27 +189,6 @@ export default async function ShipmentDetailPage({ params, searchParams }: { par
         </aside>
       </div>
     </div>
-  );
-}
-
-function LocationCard({ label, lat, lng, note, showDirections }: { label: "موقع الاستلام" | "موقع التسليم"; lat: number; lng: number; note: string | null; showDirections: boolean }) {
-  const delta = 0.006;
-  const bbox = `${lng - delta},${lat - delta},${lng + delta},${lat + delta}`;
-  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(bbox)}&layer=mapnik&marker=${encodeURIComponent(`${lat},${lng}`)}`;
-  const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${lat},${lng}`)}`;
-
-  return (
-    <section className="card overflow-hidden">
-      <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-        <div><p className="eyebrow mb-1">خاص بالطرفين</p><h2 className="flex items-center gap-2 text-xl font-black"><MapPin className="text-palm-600" size={21} /> {label}</h2></div>
-        {showDirections && <a href={directionsUrl} target="_blank" rel="noreferrer" className="btn-primary"><Navigation size={17} /> فتح الاتجاهات</a>}
-      </div>
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
-        <iframe title={label} src={mapUrl} className="h-64 w-full border-0 sm:h-72" loading="lazy" referrerPolicy="no-referrer" />
-      </div>
-      {note && <div className="mt-4 rounded-2xl bg-slate-50 p-4"><p className="text-xs font-bold text-slate-500">ملاحظة الموقع</p><p className="mt-1 text-sm leading-7 text-slate-700">{note}</p></div>}
-      <p className="mt-3 flex items-start gap-2 text-xs leading-6 text-slate-500"><ShieldCheck className="mt-0.5 shrink-0 text-palm-600" size={15} /> الموقع الدقيق خاص بالمرسل والموصل المقبول فقط.</p>
-    </section>
   );
 }
 

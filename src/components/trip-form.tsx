@@ -20,20 +20,13 @@ export function TripForm({ minDate }: { minDate: string }) {
   const [from, setFrom] = useState("");
   const [legs, setLegs] = useState<LegDraft[]>([newLeg("AIR")]);
 
-  const itinerary = useMemo<TravelLeg[]>(() => {
-    let currentFrom = from.trim();
-    return legs.map((leg) => {
-      const item: TravelLeg = {
-        mode: leg.mode,
-        from: currentFrom,
-        to: leg.to.trim(),
-        ...(leg.mode === "AIR" && leg.airline ? { airline: leg.airline } : {}),
-        ...(leg.mode === "AIR" && leg.flightNumber ? { flightNumber: leg.flightNumber.trim() } : {}),
-      };
-      currentFrom = leg.to.trim();
-      return item;
-    });
-  }, [from, legs]);
+  const itinerary = useMemo<TravelLeg[]>(() => legs.map((leg, index) => ({
+    mode: leg.mode,
+    from: (index === 0 ? from : legs[index - 1].to).trim(),
+    to: leg.to.trim(),
+    ...(leg.mode === "AIR" && leg.airline ? { airline: leg.airline } : {}),
+    ...(leg.mode === "AIR" && leg.flightNumber ? { flightNumber: leg.flightNumber.trim() } : {}),
+  })), [from, legs]);
 
   function updateLeg(index: number, patch: Partial<LegDraft>) {
     setLegs((current) => current.map((leg, itemIndex) => itemIndex === index ? { ...leg, ...patch } : leg));

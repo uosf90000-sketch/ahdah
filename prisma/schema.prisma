@@ -109,6 +109,7 @@ model Shipment {
   deliveryLat           Float?
   deliveryLng           Float?
   deliveryNote          String?          @db.VarChar(300)
+  transportPreference   String           @default("ANY")
   weightKg              Decimal          @db.Decimal(8, 2)
   lengthCm              Decimal          @db.Decimal(8, 2)
   widthCm               Decimal          @db.Decimal(8, 2)

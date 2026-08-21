@@ -1,0 +1,46 @@
+name: Patch native inspection camera
+
+on:
+  push:
+    branches: [feat/native-camera-location]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: true
+      - name: Patch inspection photo input
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('src/app/shipments/[id]/page.tsx')
+          text = path.read_text()
+          old_import = 'import { MessageBanner } from "@/components/message-banner";\n'
+          new_import = old_import + 'import { NativeImageInput } from "@/components/native-image-input";\n'
+          if 'NativeImageInput' not in text:
+              if old_import not in text:
+                  raise SystemExit('MessageBanner import not found')
+              text = text.replace(old_import, new_import, 1)
+          old = '<input className="input" id="inspectionPhotos" name="inspectionPhotos" type="file" accept="image/jpeg,image/png,image/webp" multiple required />'
+          new = '<NativeImageInput id="inspectionPhotos" name="inspectionPhotos" multiple required maxFiles={6} className="input" />'
+          if old in text:
+              text = text.replace(old, new, 1)
+          elif new not in text:
+              raise SystemExit('inspection input not found')
+          path.write_text(text)
+          Path('.github/workflows/patch-native-camera.yml').unlink()
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add 'src/app/shipments/[id]/page.tsx'
+          git add -u .github/workflows/patch-native-camera.yml
+          git commit -m "feat: enable native camera for inspection photos"
+          git push

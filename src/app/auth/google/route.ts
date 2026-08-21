@@ -6,9 +6,10 @@ import {
   GOOGLE_VERIFIER_COOKIE,
   googleOAuthConfigured,
 } from "@/lib/google-oauth";
+import { getPublicOrigin } from "@/lib/public-origin";
 
 function authError(request: NextRequest, message: string) {
-  const url = new URL("/auth", request.nextUrl.origin);
+  const url = new URL("/auth", getPublicOrigin(request));
   url.searchParams.set("error", message);
   return NextResponse.redirect(url);
 }
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { url, state, verifier } = createGoogleAuthorization(request.nextUrl.origin);
+    const { url, state, verifier } = createGoogleAuthorization(getPublicOrigin(request));
     const response = NextResponse.redirect(url);
     const common = {
       httpOnly: true,

@@ -54,7 +54,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           <div className="divide-y divide-slate-100">
             <PolicyLink href="/legal/terms" label="الشروط والأحكام" />
             <PolicyLink href="/legal/privacy" label="سياسة الخصوصية" />
-            <PolicyLink href="/legal/prohibited-items" label="المحتويات المحظورة" />
+            <PolicyLink href="/legal/acceptable-use" label="سياسة الاستخدام المقبول" />
+            <PolicyLink href="/legal/cancellations-disputes" label="الإلغاء والاسترجاع والنزاعات" />
+            <PolicyLink href="/legal/prohibited-items" label="المنتجات والمحتويات المحظورة" />
           </div>
         </section>
 

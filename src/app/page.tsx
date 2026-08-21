@@ -30,10 +30,10 @@ export default async function HomePage() {
               <ShieldCheck aria-hidden="true" size={17} /> سلسلة استلام موثقة من البداية للنهاية
             </span>
             <h1 className="mt-7 max-w-[13ch] text-4xl font-bold leading-[1.25] sm:text-6xl lg:text-[4.5rem]">
-              وزنك المتاح يوصل <span className="text-[#8bbcff]">عُهدة بأمان.</span>
+              وزنك المتاح يوصل <span className="text-[#8bbcff]">عهدتك بأمان.</span>
             </h1>
             <p className="mt-6 max-w-xl text-base leading-8 text-slate-300 sm:text-lg sm:leading-9">
-              عُهدة تربط المرسل بمسافر على نفس الوجهة، مع صور واضحة وفحص حضوري ورمز تسليم يحفظ حق الجميع.
+              عهدتك تربط المرسل بمسافر على نفس الوجهة، مع صور واضحة وفحص حضوري ورمز تسليم يحفظ حق الجميع.
             </p>
             <div className="mt-8 grid gap-3 sm:flex sm:flex-wrap">
               <Link href={senderHref} className="btn min-h-14 bg-white px-6 text-base text-ink hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25">

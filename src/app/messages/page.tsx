@@ -33,7 +33,7 @@ export default async function MessagesPage() {
   return (
     <div className="page-wrap section-space">
       <div className="mb-7">
-        <p className="eyebrow mb-2">تواصل داخل عُهدة</p>
+        <p className="eyebrow mb-2">تواصل داخل عهدتك</p>
         <h1 className="title">الرسائل</h1>
         <p className="muted mt-2">المحادثة تفتح فقط بعد قبول الموصل وتبقى مرتبطة برقم العُهدة.</p>
       </div>

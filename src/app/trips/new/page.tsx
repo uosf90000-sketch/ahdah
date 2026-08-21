@@ -18,7 +18,7 @@ export default async function NewTripPage({ searchParams }: { searchParams: Prom
       <div className="mb-8 max-w-2xl">
         <span className="eyebrow mb-4"><Plane size={15} /> للمسافر</span>
         <h1 className="title">أضف رحلتك واعرف العُهد المناسبة</h1>
-        <p className="muted mt-3">لن نطلب بيانات الحجز. نستخدم المسار والموعد والوزن فقط لإظهار مطابقات مناسبة وآمنة.</p>
+        <p className="muted mt-3">لن نطلب بيانات الحجز. نستخدم المسار والوزن فقط للمطابقة، ووقت الرحلة يظهر للتنسيق.</p>
       </div>
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_21rem]">
         <div>
@@ -41,7 +41,7 @@ export default async function NewTripPage({ searchParams }: { searchParams: Prom
             <div><label className="label" htmlFor="airline">شركة الطيران</label><select className="select" id="airline" name="airline" defaultValue="" required><option value="" disabled>اختر الشركة</option><option>الخطوط السعودية</option><option>طيران ناس</option><option>طيران أديل</option><option>طيران الرياض</option><option>أخرى</option></select></div>
             <div><label className="label" htmlFor="flightNumber">رقم الرحلة (اختياري)</label><input className="input" id="flightNumber" name="flightNumber" placeholder="SV1042" dir="ltr" /></div>
           </div>
-          <div><label className="label flex items-center gap-2" htmlFor="availableWeightKg"><Scale size={18} className="text-palm-600" /> الوزن المتاح (كجم)</label><input className="input" id="availableWeightKg" name="availableWeightKg" type="number" min="0.1" max="50" step="0.1" inputMode="decimal" placeholder="مثال: 8" required /><p className="mt-2 text-sm text-slate-500">أدخل الوزن الذي يمكنك حمله بعد احتساب أمتعتك الشخصية.</p></div>
+          <div><label className="label flex items-center gap-2" htmlFor="availableWeightKg"><Scale size={18} className="text-palm-600" /> الوزن المتاح (كجم)</label><input className="input" id="availableWeightKg" name="availableWeightKg" type="number" min="1" max="50" step="1" defaultValue="10" inputMode="numeric" required /><p className="mt-2 text-sm text-slate-500">أدخل الوزن بالكيلو الصحيح، مثل 10 كجم.</p></div>
           <SubmitButton className="btn-primary w-full" pendingText="جاري البحث عن مطابقات..."><Plane size={18} /> إضافة الرحلة وعرض المطابقات</SubmitButton>
         </form>
         </div>
@@ -50,8 +50,8 @@ export default async function NewTripPage({ searchParams }: { searchParams: Prom
           <span className="eyebrow mb-5"><BadgeCheck size={15} /> رحلة موثوقة</span>
           <h2 className="text-xl font-bold text-ink-950">ما الذي يحدث بعدها؟</h2>
           <div className="mt-6 space-y-5">
-            <Info icon={MapPin} title="نطابق المسار" text="تظهر لك العُهد الموافقة للمدينة والموعد والوزن." />
-            <Info icon={CalendarClock} title="أنت تحدد السعر" text="راجع المحتويات والصور أولًا، ثم أرسل عرضك." />
+            <Info icon={MapPin} title="نطابق المسار والوزن" text="تظهر لك عُهد المستخدمين الآخرين إذا كان المسار نفسه والوزن ضمن المتاح لديك." />
+            <Info icon={CalendarClock} title="أنت تحدد السعر" text="راجع المحتويات والصور والموعد، ثم أرسل عرضك." />
             <Info icon={LockKeyhole} title="فحص قبل الحمل" text="لا تحمل أي عُهدة قبل فحصها وتوثيق موافقتك." />
           </div>
           <div className="mt-6 rounded-2xl bg-palm-50 p-4 text-sm leading-7 text-palm-800">

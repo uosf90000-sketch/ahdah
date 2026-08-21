@@ -22,9 +22,9 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
         <aside className="order-2 relative overflow-hidden bg-ink p-7 text-white sm:p-10 lg:order-1">
           <div className="absolute -bottom-24 -left-20 h-72 w-72 rounded-full bg-palm-600/25 blur-3xl" aria-hidden="true" />
           <div className="relative">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-semibold text-blue-100"><ShieldCheck aria-hidden="true" size={15} /> حساب واحد للدورين</span>
-            <h1 className="mt-6 max-w-sm text-3xl font-bold leading-[1.45]">أرسل عُهدتك، أو سجّل رحلتك ووزنك المتاح.</h1>
-            <p className="mt-4 max-w-sm text-sm leading-7 text-slate-300">لا تحتاج إلى حسابين. يمكنك التحول بين دور المرسل والمسافر في أي وقت.</p>
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-semibold text-blue-100"><ShieldCheck aria-hidden="true" size={15} /> حساب واحد لكل استخداماتك</span>
+            <h1 className="mt-6 max-w-sm text-3xl font-bold leading-[1.45]">اليوم أرسل عُهدتك، وغدًا استفد من وزنك ووصل عُهدة.</h1>
+            <p className="mt-4 max-w-sm text-sm leading-7 text-slate-300">لا يوجد نوع حساب ثابت. بعد الدخول اختر المهمة التي تريدها: إرسال شحنة أو إضافة رحلة ووزن متاح.</p>
             <ul className="mt-8 space-y-4 text-sm text-slate-200">
               <Feature text="تفاصيل وصور العُهدة قبل قبولها" />
               <Feature text="سجل فحص وحالات واضح للطرفين" />
@@ -44,7 +44,7 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
           <div className="mb-7">
             <p className="text-sm font-semibold text-palm-700">مرحبًا بك في عهدتك</p>
             <h2 className="mt-2 text-3xl font-bold">{register ? "أنشئ حسابك" : "سجّل الدخول"}</h2>
-            <p className="mt-2 text-sm leading-7 text-slate-500">{register ? "ابدأ كمرسل ومسافر من الحساب نفسه." : "أدخل بياناتك للعودة إلى عُهدك ورحلاتك."}</p>
+            <p className="mt-2 text-sm leading-7 text-slate-500">{register ? "حساب واحد فقط، وبعد الدخول اختر هل تريد الإرسال أو التوصيل." : "أدخل بياناتك للعودة إلى عُهدك ورحلاتك."}</p>
           </div>
 
           <div className="mb-7 grid grid-cols-2 rounded-2xl bg-slate-100 p-1.5" role="tablist" aria-label="الدخول أو التسجيل">
@@ -69,15 +69,6 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
               <div className="grid-form">
                 <div><label className="label" htmlFor="register-email">البريد الإلكتروني</label><input className="input" id="register-email" type="email" name="email" autoComplete="email" required placeholder="you@example.com" dir="ltr" /></div>
                 <div><label className="label" htmlFor="phone">رقم الجوال</label><input className="input" id="phone" name="phone" autoComplete="tel" inputMode="tel" placeholder="05xxxxxxxx" dir="ltr" /></div>
-              </div>
-              <div>
-                <label className="label" htmlFor="role">كيف ستستخدم تطبيق عهدتك؟</label>
-                <select className="select" id="role" name="role" defaultValue="BOTH" aria-describedby="role-help">
-                  <option value="BOTH">مرسل ومسافر — موصى به</option>
-                  <option value="SENDER">مرسل غالبًا</option>
-                  <option value="TRAVELER">مسافر / موصل غالبًا</option>
-                </select>
-                <p id="role-help" className="mt-2 text-xs leading-6 text-slate-500">يمكنك استخدام جميع الوظائف مهما كان اختيارك.</p>
               </div>
               <PasswordField id="register-password" name="password" label="كلمة المرور" autoComplete="new-password" minLength={8} help="8 أحرف على الأقل" />
               <SubmitButton className="btn-primary w-full" pendingText="جاري إنشاء الحساب..."><UserPlus aria-hidden="true" size={18} /> إنشاء الحساب</SubmitButton>

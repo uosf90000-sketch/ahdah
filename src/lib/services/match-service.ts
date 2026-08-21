@@ -27,13 +27,6 @@ export async function getTravelerMatchesForTrip(tripId: string, travelerId: stri
       requestedDeliveryAt: true,
       status: true,
       createdAt: true,
-      sender: {
-        select: {
-          id: true,
-          name: true,
-          ratingsReceived: { select: { score: true } },
-        },
-      },
       photos: {
         where: { kind: PhotoKind.ORIGINAL },
         select: { id: true, kind: true, url: true, caption: true },

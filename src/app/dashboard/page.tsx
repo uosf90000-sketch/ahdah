@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { ArrowLeft, Boxes, PackagePlus, Plane, Scale, Sparkles, Star } from "lucide-react";
+import { ArrowLeft, Boxes, PackagePlus, PackageSearch, Plane, Scale, Sparkles, Star } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/domain";
+import { getTravelerMatchesForTrip } from "@/lib/services/match-service";
 import { StatusBadge } from "@/components/status";
 
 export const metadata = { title: "لوحتي" };
@@ -10,13 +11,25 @@ export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const user = await requireUser();
+  const now = new Date();
   const [sent, trips, carrying, receivedRatings] = await Promise.all([
     db.shipment.findMany({ where: { senderId: user.id }, include: { offers: true }, orderBy: { createdAt: "desc" }, take: 5 }),
-    db.trip.findMany({ where: { travelerId: user.id }, include: { offers: true }, orderBy: { departureAt: "asc" }, take: 5 }),
+    db.trip.findMany({ where: { travelerId: user.id }, include: { offers: true }, orderBy: { departureAt: "asc" }, take: 8 }),
     db.shipment.findMany({ where: { acceptedOffer: { travelerId: user.id }, status: { notIn: ["DELIVERED", "CANCELLED"] } }, include: { acceptedOffer: true }, orderBy: { updatedAt: "desc" } }),
     db.rating.aggregate({ where: { targetId: user.id }, _avg: { score: true }, _count: true }),
   ]);
-  const openOffers = sent.reduce((total, shipment) => total + shipment.offers.filter((offer) => offer.status === "PENDING").length, 0);
+
+  const openTrips = trips.filter((trip) => trip.status === "OPEN" && trip.departureAt > now);
+  const matchRows = await Promise.all(
+    openTrips.map(async (trip) => ({ trip, matches: await getTravelerMatchesForTrip(trip.id, user.id) })),
+  );
+  const availableToCarry = Array.from(
+    new Map(
+      matchRows
+        .flatMap(({ trip, matches }) => matches.map((shipment) => ({ trip, shipment })))
+        .map((item) => [item.shipment.id, item]),
+    ).values(),
+  ).slice(0, 6);
 
   return (
     <div className="page-wrap section-space">
@@ -44,8 +57,8 @@ export default async function DashboardPage() {
       </section>
 
       <section className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="ملخص الحساب">
-        <Metric label="طلبات الشحن" value={sent.length} Icon={Boxes} />
-        <Metric label="العروض الجديدة" value={openOffers} Icon={Sparkles} accent />
+        <Metric label="طلباتي المرسلة" value={sent.length} Icon={Boxes} />
+        <Metric label="طلبات متاحة للتوصيل" value={availableToCarry.length} Icon={Sparkles} accent />
         <Metric label="عُهد أحملها" value={carrying.length} Icon={Scale} />
         <Metric label="تقييمي" value={receivedRatings._count ? `${receivedRatings._avg.score?.toFixed(1)} / 5` : "جديد"} Icon={Star} />
       </section>
@@ -59,9 +72,50 @@ export default async function DashboardPage() {
         </section>
       )}
 
+      <section className="card mt-6 border-2 !border-palm-100">
+        <div className="mb-5 flex items-center justify-between gap-4">
+          <div>
+            <p className="eyebrow mb-2">وضع الموصل</p>
+            <h2 className="text-xl font-bold">طلبات متاحة للتوصيل</h2>
+            <p className="muted mt-1">هذه طلبات مستخدمين آخرين فقط، ومطابقة لرحلاتك ووزنك المتاح.</p>
+          </div>
+          <Link href="/matches" className="inline-flex min-h-11 items-center gap-1 rounded-xl px-3 text-sm font-semibold text-palm-700 hover:bg-palm-50">كل المطابقات <ArrowLeft aria-hidden="true" size={15} /></Link>
+        </div>
+
+        {availableToCarry.length ? (
+          <div className="grid gap-3 md:grid-cols-2">
+            {availableToCarry.map(({ shipment, trip }) => (
+              <article key={shipment.id} className="rounded-2xl border border-palm-100 bg-palm-50/40 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <strong className="block truncate">{shipment.fromCity} ← {shipment.toCity}</strong>
+                    <p className="mt-1 text-xs text-slate-500">{shipment.refCode} · {shipment.weightKg.toString()} كجم</p>
+                  </div>
+                  <span className="pill shrink-0">{trip.availableWeightKg.toString()} كجم متاح</span>
+                </div>
+                <p className="mt-3 line-clamp-2 text-sm leading-7 text-slate-600">{shipment.contents}</p>
+                <div className="mt-4 flex items-center justify-between border-t border-palm-100 pt-3">
+                  <span className="text-xs text-slate-500">التسليم قبل {formatDate(shipment.requestedDeliveryAt)}</span>
+                  <Link href={`/shipments/${shipment.id}?trip=${trip.id}#offer`} className="inline-flex min-h-11 items-center gap-1 rounded-xl bg-palm-600 px-4 text-sm font-bold text-white">عرض وتقديم سعر <ArrowLeft size={15} /></Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : openTrips.length ? (
+          <div className="rounded-2xl bg-slate-50 p-7 text-center">
+            <PackageSearch className="mx-auto mb-3 text-palm-600" size={38} />
+            <p className="font-bold">لا توجد طلبات من مستخدمين آخرين مطابقة الآن</p>
+            <p className="muted mt-2">طلب الشحن الذي أنشأته أنت لا يظهر هنا. ستظهر طلبات الحسابات الأخرى فور مطابقتها لرحلتك.</p>
+          </div>
+        ) : (
+          <Empty text="أضف رحلة ووزنك المتاح لنظهر لك طلبات المستخدمين الآخرين" href="/trips/new" action="إضافة رحلة" />
+        )}
+      </section>
+
       <div className="mt-6 grid gap-6 lg:grid-cols-[1.15fr_.85fr]">
         <section className="card">
-          <SectionHeading title="طلبات الشحن" href="/shipments/new" action="طلب جديد" />
+          <SectionHeading title="طلباتي المرسلة" href="/shipments/new" action="طلب جديد" />
+          <p className="muted -mt-3 mb-4 text-xs">هذه الطلبات التي أنشأتها أنت كمرسل، وليست طلبات متاحة لتقديم سعر عليها.</p>
           <div className="space-y-3">
             {sent.length ? sent.map((shipment) => (
               <Link href={`/shipments/${shipment.id}`} key={shipment.id} className="group block rounded-2xl border border-slate-200 p-4 transition hover:border-palm-500 hover:bg-palm-50/40">

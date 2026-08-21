@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LogOut, ShieldCheck, UserRound } from "lucide-react";
+import { LogOut, Settings, ShieldCheck, UserRound } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { isAdminIdentity } from "@/lib/admin";
 import { logoutAction } from "@/app/actions";
@@ -21,10 +21,13 @@ export async function Header() {
                 <ShieldCheck aria-hidden="true" size={17} /> الإدارة
               </Link>
             )}
-            <span className="hidden min-h-11 items-center gap-2 rounded-2xl bg-slate-50 px-3 text-sm font-semibold text-ink sm:flex">
+            <Link href="/settings" className="hidden min-h-11 items-center gap-2 rounded-2xl bg-slate-50 px-3 text-sm font-semibold text-ink transition hover:bg-palm-50 hover:text-palm-700 sm:flex">
               <UserRound aria-hidden="true" size={17} className="text-palm-600" />
               {user.name.split(" ")[0]}
-            </span>
+            </Link>
+            <Link href="/settings" className="grid h-11 w-11 place-items-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition hover:border-palm-200 hover:bg-palm-50 hover:text-palm-700 sm:hidden" aria-label="إعدادات الحساب">
+              <Settings aria-hidden="true" size={18} />
+            </Link>
             {admin && (
               <Link href="/admin" className="grid h-11 w-11 place-items-center rounded-2xl border border-palm-100 bg-palm-50 text-palm-700 sm:hidden" aria-label="لوحة الإدارة">
                 <ShieldCheck aria-hidden="true" size={18} />

@@ -16,6 +16,9 @@ class ConsoleMessagingAdapter implements MessagingAdapter {
   managesOtpVerification = false;
 
   async sendOtp({ phone, otp, shipmentRef }: { phone: string; otp?: string; shipmentRef: string }) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("Console OTP adapter is disabled in production");
+    }
     if (!otp) throw new Error("Console OTP adapter requires an OTP value");
     console.info(`[mock-message] OTP ${otp} for ${shipmentRef} -> ${phone}`);
   }
@@ -48,7 +51,7 @@ class AuthenticaMessagingAdapter implements MessagingAdapter {
     try {
       payload = await response.json();
     } catch {
-      // Keep the provider response private; callers only need a safe error.
+      // Keep provider response private; callers only need a safe error.
     }
 
     if (!response.ok) {

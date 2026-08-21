@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Camera, Check, CircleAlert, PackageCheck, Route,
 import { useRef, useState } from "react";
 import { createShipmentAction } from "@/app/actions";
 import { CATEGORY_LABELS } from "@/lib/domain";
+import { NativeImageInput } from "@/components/native-image-input";
 import { SaudiPlaceInput } from "@/components/saudi-place-input";
 import { SubmitButton } from "@/components/submit-button";
 
@@ -77,8 +78,8 @@ export function ShipmentForm({ minDate }: { minDate: string }) {
             <div><label className="label" htmlFor="approximateValueSar">القيمة التقريبية (ريال)</label><input className="input" id="approximateValueSar" name="approximateValueSar" type="number" min="0" max="100000" step="1" required inputMode="decimal" /></div>
             <div className="rounded-3xl border border-dashed border-palm-500 bg-palm-50/60 p-5">
               <label className="label flex items-center gap-2" htmlFor="photos"><Camera aria-hidden="true" size={18} className="text-palm-600" /> صور واضحة للمحتويات</label>
-              <input className="input bg-white" id="photos" name="photos" type="file" accept="image/jpeg,image/png,image/webp" multiple required />
-              <p className="mt-2 text-xs leading-6 text-slate-500">من صورة إلى 6 صور، وبحد أقصى 3MB للصورة.</p>
+              <NativeImageInput id="photos" name="photos" multiple required maxFiles={6} />
+              <p className="mt-2 text-xs leading-6 text-slate-500">من صورة إلى 6 صور، وبحد أقصى 3MB للصورة. في التطبيق يمكنك التصوير بالكاميرا مباشرة.</p>
             </div>
           </div>
         </fieldset>

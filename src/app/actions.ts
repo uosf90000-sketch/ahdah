@@ -8,15 +8,17 @@ import { db } from "@/lib/db";
 import { DomainValidationError } from "@/lib/domain";
 import { clientAddress, enforceRateLimit } from "@/lib/rate-limit";
 import {
-  acceptOffer,
   advanceShipment,
-  completeDelivery,
   createRating,
   createShipmentFromForm,
   inspectShipment,
-  issueDeliveryOtp,
 } from "@/lib/services/shipment-service";
 import { createRouteAwareOffer, createRouteAwareTrip } from "@/lib/services/route-trip-service";
+import {
+  acceptOfferSafely,
+  completeDeliverySafely,
+  issueDeliveryOtpSafely,
+} from "@/lib/services/secure-workflow-service";
 
 function messageFrom(error: unknown) {
   if (error instanceof DomainValidationError) return error.issues.join("، ");
@@ -134,8 +136,9 @@ export async function acceptOfferAction(formData: FormData) {
   const shipmentId = String(formData.get("shipmentId") ?? "");
   let destination = `/shipments/${shipmentId}`;
   try {
-    await acceptOffer(user.id, String(formData.get("offerId") ?? ""));
+    await acceptOfferSafely(user.id, String(formData.get("offerId") ?? ""));
     revalidatePath(`/shipments/${shipmentId}`);
+    revalidatePath("/dashboard");
     destination += `?success=${encodeURIComponent("تم قبول المسافر وحجز المبلغ تجريبيًا")}`;
   } catch (error) {
     destination = withError(destination, messageFrom(error));
@@ -177,8 +180,7 @@ export async function sendOtpAction(formData: FormData) {
   const token = String(formData.get("token") ?? "").trim();
   let destination = `/handover/${encodeURIComponent(token)}`;
   try {
-    if (!token || token.length > 128) throw new DomainValidationError(["رابط التسليم غير صالح"]);
-    const demoOtp = await issueDeliveryOtp(token);
+    const demoOtp = await issueDeliveryOtpSafely(token);
     const query = new URLSearchParams({ success: "تم إرسال رمز الاستلام إلى جوال المستلم" });
     if (demoOtp) query.set("demoOtp", demoOtp);
     destination += `?${query}`;
@@ -192,9 +194,9 @@ export async function completeDeliveryAction(formData: FormData) {
   const token = String(formData.get("token") ?? "").trim();
   let destination = `/handover/${encodeURIComponent(token)}`;
   try {
-    if (!token || token.length > 128) throw new DomainValidationError(["رابط التسليم غير صالح"]);
-    const shipmentId = await completeDelivery(token, String(formData.get("otp") ?? ""));
+    const shipmentId = await completeDeliverySafely(token, String(formData.get("otp") ?? ""));
     revalidatePath(`/shipments/${shipmentId}`);
+    revalidatePath("/dashboard");
     destination += "?delivered=1";
   } catch (error) {
     destination = withError(destination, messageFrom(error));

@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from "@/components/header";
 import { LegalFooter } from "@/components/legal-footer";
 import { MobileNav } from "@/components/mobile-nav";
+import { NativePushBootstrap } from "@/components/native-push-bootstrap";
 
 export const metadata: Metadata = {
   title: { default: "عهدتك | سفر موثوق وتسليم مؤكّد", template: "%s | عهدتك" },
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="ar" dir="rtl">
       <body className={plexArabic.variable}>
+        <NativePushBootstrap />
         <a href="#main-content" className="skip-link">تخطَّ إلى المحتوى</a>
         <Header />
         <main id="main-content" className="pb-28 md:pb-0">{children}</main>

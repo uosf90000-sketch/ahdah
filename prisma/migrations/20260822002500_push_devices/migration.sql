@@ -1,0 +1,13 @@
+CREATE TABLE IF NOT EXISTS "PushDevice" (
+  "id" TEXT NOT NULL,
+  "token" VARCHAR(4096) NOT NULL,
+  "platform" VARCHAR(20) NOT NULL,
+  "userId" TEXT NOT NULL,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "PushDevice_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "PushDevice_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "PushDevice_token_key" ON "PushDevice"("token");
+CREATE INDEX IF NOT EXISTS "PushDevice_userId_idx" ON "PushDevice"("userId");

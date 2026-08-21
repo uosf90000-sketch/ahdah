@@ -6,7 +6,7 @@ import {
   ShipmentStatus,
   TripStatus,
 } from "@prisma/client";
-import { createHash, randomBytes } from "node:crypto";
+import { createHmac, randomBytes, randomInt } from "node:crypto";
 import { db } from "@/lib/db";
 import {
   assertTransition,
@@ -22,11 +22,20 @@ import { paymentAdapter } from "@/lib/adapters/payment";
 import { messagingAdapter } from "@/lib/adapters/messaging";
 
 const categoryValues = new Set(Object.values(ShipmentCategory));
-const otpHash = (otp: string) => createHash("sha256").update(otp).digest("hex");
+const OTP_MAX_ATTEMPTS = 5;
+const OTP_RESEND_COOLDOWN_MS = 60_000;
+
+function otpSecret() {
+  const secret = process.env.OTP_HASH_SECRET?.trim() || process.env.SESSION_SECRET?.trim();
+  if (!secret || secret.length < 32) throw new Error("OTP_HASH_SECRET or SESSION_SECRET must contain at least 32 characters");
+  return secret;
+}
+
+const otpHash = (otp: string) => createHmac("sha256", otpSecret()).update(otp).digest("hex");
 
 function referenceCode() {
   const date = new Date().toISOString().slice(2, 10).replaceAll("-", "");
-  return `AHD-${date}-${randomBytes(2).toString("hex").toUpperCase()}`;
+  return `AHD-${date}-${randomBytes(3).toString("hex").toUpperCase()}`;
 }
 
 export async function createShipment(senderId: string, input: FormData | Record<string, unknown>, photoUrls: string[]) {
@@ -37,7 +46,6 @@ export async function createShipment(senderId: string, input: FormData | Record<
   return db.shipment.create({
     data: {
       ...data,
-      // Legacy DB columns remain populated internally; dimensions are no longer collected from users.
       lengthCm: 1,
       widthCm: 1,
       heightCm: 1,
@@ -75,12 +83,29 @@ export async function getMatchesForTrip(tripId: string, travelerId: string) {
   if (!trip) throw new DomainValidationError(["الرحلة غير موجودة"]);
   return db.shipment.findMany({
     where: {
+      senderId: { not: travelerId },
       fromCity: trip.fromCity,
       toCity: trip.toCity,
       weightKg: { lte: trip.availableWeightKg },
       status: { in: [ShipmentStatus.NEW, ShipmentStatus.RECEIVING_OFFERS] },
     },
-    include: { sender: true, photos: { where: { kind: PhotoKind.ORIGINAL } }, offers: { where: { travelerId } } },
+    select: {
+      id: true,
+      refCode: true,
+      senderId: true,
+      fromCity: true,
+      toCity: true,
+      transportPreference: true,
+      weightKg: true,
+      category: true,
+      contents: true,
+      requestedDeliveryAt: true,
+      status: true,
+      createdAt: true,
+      sender: { select: { id: true, name: true } },
+      photos: { where: { kind: PhotoKind.ORIGINAL }, select: { id: true, kind: true, url: true, caption: true } },
+      offers: { where: { travelerId }, select: { id: true, tripId: true, priceSar: true, note: true, status: true } },
+    },
     orderBy: { createdAt: "desc" },
   });
 }
@@ -149,6 +174,7 @@ export async function inspectShipment(travelerId: string, shipmentId: string, fo
   const files = formData.getAll("inspectionPhotos").filter((item): item is File => item instanceof File && item.size > 0);
   const photoUrls = await storageAdapter.saveImages(files, `inspection-${shipmentId}`);
   const notes = String(formData.get("notes") ?? "").trim();
+  if (notes.length > 1000) throw new DomainValidationError(["ملاحظات الفحص طويلة جدًا"]);
 
   await db.$transaction([
     db.inspection.create({ data: { shipmentId, travelerId, ...checks, notes } }),
@@ -172,16 +198,20 @@ export async function issueDeliveryOtp(qrToken: string) {
   const shipment = await db.shipment.findUnique({ where: { qrToken } });
   if (!shipment || shipment.status !== ShipmentStatus.ARRIVED) throw new DomainValidationError(["العُهدة غير جاهزة للتسليم"]);
 
-  const demoMode = process.env.ENABLE_DEMO_OTP === "true";
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+  const now = new Date();
+  if (shipment.deliveryOtpLastSentAt && now.getTime() - shipment.deliveryOtpLastSentAt.getTime() < OTP_RESEND_COOLDOWN_MS) {
+    throw new DomainValidationError(["انتظر دقيقة قبل طلب رمز جديد"]);
+  }
+
+  const demoMode = process.env.NODE_ENV !== "production" && process.env.ENABLE_DEMO_OTP === "true";
+  const expiresAt = new Date(now.getTime() + 10 * 60 * 1000);
 
   if (demoMode) {
     const otp = "2468";
     await db.shipment.update({
       where: { id: shipment.id },
-      data: { deliveryOtpHash: otpHash(otp), deliveryOtpExpiresAt: expiresAt },
+      data: { deliveryOtpHash: otpHash(otp), deliveryOtpExpiresAt: expiresAt, deliveryOtpAttempts: 0, deliveryOtpLastSentAt: now },
     });
-    console.info(`[demo-message] OTP ${otp} for ${shipment.refCode}`);
     return otp;
   }
 
@@ -189,17 +219,17 @@ export async function issueDeliveryOtp(qrToken: string) {
     await messagingAdapter.sendOtp({ phone: shipment.recipientPhone, shipmentRef: shipment.refCode });
     await db.shipment.update({
       where: { id: shipment.id },
-      data: { deliveryOtpHash: null, deliveryOtpExpiresAt: expiresAt },
+      data: { deliveryOtpHash: null, deliveryOtpExpiresAt: expiresAt, deliveryOtpAttempts: 0, deliveryOtpLastSentAt: now },
     });
     return null;
   }
 
-  const otp = String(Math.floor(1000 + Math.random() * 9000));
+  const otp = String(randomInt(1000, 10_000));
+  await messagingAdapter.sendOtp({ phone: shipment.recipientPhone, otp, shipmentRef: shipment.refCode });
   await db.shipment.update({
     where: { id: shipment.id },
-    data: { deliveryOtpHash: otpHash(otp), deliveryOtpExpiresAt: expiresAt },
+    data: { deliveryOtpHash: otpHash(otp), deliveryOtpExpiresAt: expiresAt, deliveryOtpAttempts: 0, deliveryOtpLastSentAt: now },
   });
-  await messagingAdapter.sendOtp({ phone: shipment.recipientPhone, otp, shipmentRef: shipment.refCode });
   return null;
 }
 
@@ -209,21 +239,31 @@ export async function completeDelivery(qrToken: string, otp: string) {
   if (!shipment.deliveryOtpExpiresAt || shipment.deliveryOtpExpiresAt <= new Date()) {
     throw new DomainValidationError(["رمز الاستلام منتهي؛ اطلب رمزًا جديدًا"]);
   }
+  if (shipment.deliveryOtpAttempts >= OTP_MAX_ATTEMPTS) {
+    throw new DomainValidationError(["تم تجاوز عدد محاولات الرمز؛ اطلب رمزًا جديدًا"]);
+  }
 
   const cleanOtp = otp.trim();
   if (!/^\d{4}$/.test(cleanOtp)) throw new DomainValidationError(["رمز الاستلام يجب أن يكون 4 أرقام"]);
 
-  if (messagingAdapter.managesOtpVerification && process.env.ENABLE_DEMO_OTP !== "true") {
-    const verified = await messagingAdapter.verifyOtp?.({ phone: shipment.recipientPhone, otp: cleanOtp, shipmentRef: shipment.refCode });
-    if (!verified) throw new DomainValidationError(["رمز الاستلام غير صحيح"]);
+  const demoMode = process.env.NODE_ENV !== "production" && process.env.ENABLE_DEMO_OTP === "true";
+  let verified = false;
+  if (messagingAdapter.managesOtpVerification && !demoMode) {
+    verified = await messagingAdapter.verifyOtp?.({ phone: shipment.recipientPhone, otp: cleanOtp, shipmentRef: shipment.refCode }) === true;
   } else {
-    if (!shipment.deliveryOtpHash || otpHash(cleanOtp) !== shipment.deliveryOtpHash) {
-      throw new DomainValidationError(["رمز الاستلام غير صحيح"]);
-    }
+    verified = Boolean(shipment.deliveryOtpHash && otpHash(cleanOtp) === shipment.deliveryOtpHash);
+  }
+
+  if (!verified) {
+    await db.shipment.update({ where: { id: shipment.id }, data: { deliveryOtpAttempts: { increment: 1 } } });
+    throw new DomainValidationError([shipment.deliveryOtpAttempts + 1 >= OTP_MAX_ATTEMPTS ? "تم تجاوز عدد محاولات الرمز؛ اطلب رمزًا جديدًا" : "رمز الاستلام غير صحيح"]);
   }
 
   await db.$transaction([
-    db.shipment.update({ where: { id: shipment.id }, data: { status: ShipmentStatus.DELIVERED, deliveryOtpHash: null, deliveryOtpExpiresAt: null } }),
+    db.shipment.update({
+      where: { id: shipment.id },
+      data: { status: ShipmentStatus.DELIVERED, deliveryOtpHash: null, deliveryOtpExpiresAt: null, deliveryOtpAttempts: 0 },
+    }),
     db.payment.update({ where: { shipmentId: shipment.id }, data: { status: "CAPTURED" } }),
     db.statusEvent.create({ data: { shipmentId: shipment.id, status: ShipmentStatus.DELIVERED, note: "أكد المستلم الاستلام برمز OTP عبر رابط QR" } }),
   ]);
@@ -246,10 +286,21 @@ export async function createRating(authorId: string, shipmentId: string, score: 
 }
 
 export const shipmentDetailInclude = Prisma.validator<Prisma.ShipmentInclude>()({
-  sender: true,
+  sender: { select: { id: true, name: true } },
   photos: { orderBy: { createdAt: "asc" } },
-  offers: { include: { traveler: { include: { ratingsReceived: true } }, trip: true }, orderBy: { priceSar: "asc" } },
-  acceptedOffer: { include: { traveler: { include: { ratingsReceived: true } }, trip: true } },
+  offers: {
+    include: {
+      traveler: { select: { id: true, name: true, ratingsReceived: true } },
+      trip: true,
+    },
+    orderBy: { priceSar: "asc" },
+  },
+  acceptedOffer: {
+    include: {
+      traveler: { select: { id: true, name: true, ratingsReceived: true } },
+      trip: true,
+    },
+  },
   inspection: true,
   statusEvents: { orderBy: { createdAt: "asc" } },
   ratings: true,

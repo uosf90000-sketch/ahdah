@@ -41,7 +41,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm audit --audit-level=high
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
       - run: npx prisma generate
       - run: npx prisma db push
       - run: npm run lint

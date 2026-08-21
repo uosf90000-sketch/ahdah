@@ -50,18 +50,18 @@ export function ShipmentForm({ minDate }: { minDate: string }) {
           <legend className="text-xl font-bold">المسار وطريقة النقل</legend>
           <p className="mt-2 text-sm leading-7 text-slate-500">حدد مكان الإرسال والوصول وطريقة النقل. المواقع الدقيقة تُحدد داخل المحادثة بعد قبول العرض.</p>
 
-          <div className="mt-7 grid-form">
-            <SaudiPlaceInput id="fromCity" name="fromCity" label="مكان الإرسال" />
-            <SaudiPlaceInput id="toCity" name="toCity" label="مكان الوصول" />
-          </div>
-
-          <div className="mt-6">
+          <div className="mt-7">
             <label className="label" htmlFor="transportPreference">طريقة النقل</label>
             <select className="select" id="transportPreference" name="transportPreference" defaultValue="ANY" required>
               <option value="AIR">طيران فقط</option>
               <option value="ROAD">على الطريق فقط</option>
               <option value="ANY">كلاهما</option>
             </select>
+          </div>
+
+          <div className="mt-6 grid-form">
+            <SaudiPlaceInput id="toCity" name="toCity" label="مكان الوصول" />
+            <SaudiPlaceInput id="fromCity" name="fromCity" label="مكان الإرسال" />
           </div>
 
           <div className="mt-6"><label className="label" htmlFor="requestedDeliveryAt">آخر وقت مناسب للاستلام من المرسل</label><input className="input" id="requestedDeliveryAt" name="requestedDeliveryAt" type="datetime-local" min={minDate} required /></div>

@@ -9,14 +9,16 @@ import {
   GOOGLE_STATE_COOKIE,
   GOOGLE_VERIFIER_COOKIE,
 } from "@/lib/google-oauth";
+import { getPublicOrigin } from "@/lib/public-origin";
 
 function authError(request: NextRequest, message: string) {
-  const url = new URL("/auth", request.nextUrl.origin);
+  const url = new URL("/auth", getPublicOrigin(request));
   url.searchParams.set("error", message);
   return NextResponse.redirect(url);
 }
 
 export async function GET(request: NextRequest) {
+  const publicOrigin = getPublicOrigin(request);
   const providerError = request.nextUrl.searchParams.get("error");
   if (providerError) return authError(request, "تم إلغاء تسجيل الدخول باستخدام Google");
 
@@ -30,7 +32,7 @@ export async function GET(request: NextRequest) {
 
   let userId: string;
   try {
-    const profile = await exchangeGoogleCode({ code, verifier, origin: request.nextUrl.origin });
+    const profile = await exchangeGoogleCode({ code, verifier, origin: publicOrigin });
     let user = await db.user.findFirst({
       where: { OR: [{ googleSubject: profile.sub }, { email: profile.email }] },
     });
@@ -74,5 +76,5 @@ export async function GET(request: NextRequest) {
     return authError(request, "تم التحقق من Google لكن تعذر إنشاء جلسة الدخول");
   }
 
-  redirect("/dashboard");
+  redirect(`${publicOrigin}/dashboard`);
 }

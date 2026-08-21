@@ -95,16 +95,22 @@ export async function createTripAction(formData: FormData) {
 
 export async function createOfferAction(formData: FormData) {
   const user = await requireUser();
-  const shipmentId = String(formData.get("shipmentId") ?? "");
-  const tripId = String(formData.get("tripId") ?? "");
-  let destination = `/shipments/${shipmentId}`;
+  const shipmentId = String(formData.get("shipmentId") ?? "").trim();
+  const tripId = String(formData.get("tripId") ?? "").trim();
+  const tripDestination = tripId ? `/trips/${tripId}` : "/dashboard";
+  let destination = tripDestination;
+
   try {
+    if (!shipmentId || !tripId) throw new DomainValidationError(["تعذر تحديد الطلب أو الرحلة. افتح الطلب من قسم الطلبات المتاحة وحاول مرة أخرى"]);
     await createOffer(user.id, shipmentId, tripId, formData);
-    revalidatePath(destination);
-    destination += `?success=${encodeURIComponent("تم إرسال عرضك للمرسل")}`;
+    revalidatePath(`/shipments/${shipmentId}`);
+    revalidatePath(`/trips/${tripId}`);
+    revalidatePath("/dashboard");
+    destination = `${tripDestination}?success=${encodeURIComponent("تم إرسال عرضك للمرسل بنجاح")}`;
   } catch (error) {
-    destination = withError(destination, messageFrom(error));
+    destination = withError(tripDestination, messageFrom(error));
   }
+
   redirect(destination);
 }
 
@@ -142,7 +148,7 @@ export async function advanceShipmentAction(formData: FormData) {
   let destination = `/shipments/${shipmentId}`;
   try {
     const status = String(formData.get("nextStatus")) as "WITH_TRAVELER" | "ARRIVED";
-    if (!['WITH_TRAVELER', 'ARRIVED'].includes(status)) throw new DomainValidationError(["الحالة المطلوبة غير صالحة"]);
+    if (!["WITH_TRAVELER", "ARRIVED"].includes(status)) throw new DomainValidationError(["الحالة المطلوبة غير صالحة"]);
     await advanceShipment(user.id, shipmentId, status);
     revalidatePath(`/shipments/${shipmentId}`);
     destination += `?success=${encodeURIComponent("تم تحديث حالة العُهدة")}`;

@@ -60,8 +60,8 @@ export function ShipmentForm({ minDate }: { minDate: string }) {
           </div>
 
           <div className="mt-6 grid-form">
-            <SaudiPlaceInput id="toCity" name="toCity" label="مكان الوصول" />
             <SaudiPlaceInput id="fromCity" name="fromCity" label="مكان الإرسال" />
+            <SaudiPlaceInput id="toCity" name="toCity" label="مكان الوصول" />
           </div>
 
           <div className="mt-6"><label className="label" htmlFor="requestedDeliveryAt">آخر وقت مناسب للاستلام من المرسل</label><input className="input" id="requestedDeliveryAt" name="requestedDeliveryAt" type="datetime-local" min={minDate} required /></div>

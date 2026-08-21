@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { ArrowRight, LockKeyhole, MessageCircle, Navigation, Send, ShieldCheck } from "lucide-react";
+import { ArrowRight, LockKeyhole, MessageCircle, Send, ShieldCheck } from "lucide-react";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { formatDate } from "@/lib/domain";
 import { getChatContext, getChatMessages } from "@/lib/services/chat-service";
 import { sendChatMessageAction } from "@/app/messages/actions";
 import { ChatLive } from "@/components/chat-live";
+import { ChatLocationControls } from "@/components/chat-location-controls";
 import { MessageBanner } from "@/components/message-banner";
 import { StatusBadge } from "@/components/status";
 import { SubmitButton } from "@/components/submit-button";
@@ -17,7 +18,7 @@ export default async function ConversationPage({
   searchParams,
 }: {
   params: Promise<{ shipmentId: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; success?: string }>;
 }) {
   const user = await requireUser();
   const { shipmentId } = await params;
@@ -30,7 +31,13 @@ export default async function ConversationPage({
     notFound();
   }
   const messages = await getChatMessages(user.id, shipmentId);
-  const locationHref = buildLocationHref(context.shipment);
+  const isSender = context.shipment.senderId === user.id;
+  const pickup = context.shipment.pickupLat !== null && context.shipment.pickupLng !== null
+    ? { lat: context.shipment.pickupLat, lng: context.shipment.pickupLng, note: context.shipment.pickupNote }
+    : null;
+  const delivery = context.shipment.deliveryLat !== null && context.shipment.deliveryLng !== null
+    ? { lat: context.shipment.deliveryLat, lng: context.shipment.deliveryLng, note: context.shipment.deliveryNote }
+    : null;
 
   return (
     <div className="page-wrap section-space">
@@ -41,21 +48,24 @@ export default async function ConversationPage({
             <Link href="/messages" className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-slate-200 text-slate-600 hover:bg-slate-50" aria-label="العودة للرسائل"><ArrowRight aria-hidden="true" size={19} /></Link>
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-palm-50 text-palm-700"><MessageCircle aria-hidden="true" size={21} /></span>
             <div className="min-w-0 flex-1"><h1 className="truncate text-lg font-bold">{context.otherParticipant.name}</h1><p className="mt-1 text-xs text-slate-500">{context.shipment.refCode} · {context.shipment.fromCity} ← {context.shipment.toCity}</p></div>
-            {locationHref && (
-              <a href={locationHref} target="_blank" rel="noreferrer" className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-palm-200 bg-palm-50 text-palm-700 transition hover:border-palm-400 hover:bg-palm-100" aria-label="فتح موقع الاستلام والتسليم" title="موقع الاستلام والتسليم">
-                <Navigation aria-hidden="true" size={20} />
-              </a>
-            )}
             <StatusBadge status={context.shipment.status} />
           </div>
         </header>
 
         <div className="border-b border-slate-100 bg-slate-50 px-4 py-3 text-xs leading-6 text-slate-600 sm:px-5">
           <ShieldCheck aria-hidden="true" className="ml-1 inline text-palm-600" size={15} />
-          المواقع الدقيقة خاصة بالطرفين. استخدم أيقونة الموقع أعلى المحادثة لفتح الاتجاهات.
+          المواقع الدقيقة خاصة بطرفي العُهدة وتُحدد هنا بعد قبول العرض.
         </div>
 
-        <MessageBanner error={query.error} />
+        <ChatLocationControls
+          shipmentId={shipmentId}
+          isSender={isSender}
+          writable={context.writable}
+          pickup={pickup}
+          delivery={delivery}
+        />
+
+        <MessageBanner error={query.error} success={query.success} />
 
         <section className="max-h-[58dvh] min-h-[24rem] space-y-3 overflow-y-auto bg-[#f7f9fc] p-4 sm:p-5" aria-label="المحادثة">
           {messages.length ? messages.map((message, index) => {
@@ -88,21 +98,4 @@ export default async function ConversationPage({
       </div>
     </div>
   );
-}
-
-function buildLocationHref(shipment: {
-  pickupLat: number | null;
-  pickupLng: number | null;
-  deliveryLat: number | null;
-  deliveryLng: number | null;
-}) {
-  const hasPickup = shipment.pickupLat !== null && shipment.pickupLng !== null;
-  const hasDelivery = shipment.deliveryLat !== null && shipment.deliveryLng !== null;
-  if (hasPickup && hasDelivery) {
-    return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(`${shipment.pickupLat},${shipment.pickupLng}`)}&destination=${encodeURIComponent(`${shipment.deliveryLat},${shipment.deliveryLng}`)}`;
-  }
-  const lat = hasPickup ? shipment.pickupLat : shipment.deliveryLat;
-  const lng = hasPickup ? shipment.pickupLng : shipment.deliveryLng;
-  if (lat === null || lng === null) return null;
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`;
 }

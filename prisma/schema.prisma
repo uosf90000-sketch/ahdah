@@ -73,6 +73,7 @@ model User {
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   sessions        Session[]
+  pushDevices     PushDevice[]
   sentShipments   Shipment[]      @relation("ShipmentSender")
   trips           Trip[]
   offers          Offer[]
@@ -94,6 +95,18 @@ model Session {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+model PushDevice {
+  id        String   @id @default(cuid())
+  token     String   @unique @db.VarChar(4096)
+  platform  String   @db.VarChar(20)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model Shipment {

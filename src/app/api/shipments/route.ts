@@ -5,6 +5,7 @@ import { createShipmentFromForm } from "@/lib/services/shipment-service";
 
 export const dynamic = "force-dynamic";
 const MAX_REQUEST_BYTES = 12 * 1024 * 1024;
+const noStore = { "cache-control": "private, no-store" };
 
 const shipmentApiSelect = {
   id: true,
@@ -25,7 +26,6 @@ const shipmentApiSelect = {
   approximateValueSar: true,
   requestedDeliveryAt: true,
   recipientName: true,
-  recipientPhone: true,
   status: true,
   acceptedOfferId: true,
   createdAt: true,
@@ -45,34 +45,34 @@ const shipmentApiSelect = {
 
 export async function GET() {
   const user = await getCurrentUser();
-  if (!user) return Response.json({ error: "غير مصرح" }, { status: 401 });
+  if (!user) return Response.json({ error: "غير مصرح" }, { status: 401, headers: noStore });
   const shipments = await db.shipment.findMany({
     where: { OR: [{ senderId: user.id }, { acceptedOffer: { travelerId: user.id } }] },
     select: shipmentApiSelect,
     orderBy: { createdAt: "desc" },
   });
-  return Response.json({ shipments }, { headers: { "cache-control": "no-store" } });
+  return Response.json({ shipments }, { headers: noStore });
 }
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
-  if (!user) return Response.json({ error: "غير مصرح" }, { status: 401 });
+  if (!user) return Response.json({ error: "غير مصرح" }, { status: 401, headers: noStore });
 
   const contentType = request.headers.get("content-type") ?? "";
   if (!contentType.toLowerCase().startsWith("multipart/form-data")) {
-    return Response.json({ error: ["يجب رفع الصور كملفات multipart/form-data"] }, { status: 415 });
+    return Response.json({ error: ["يجب رفع الصور كملفات multipart/form-data"] }, { status: 415, headers: noStore });
   }
   const contentLength = Number(request.headers.get("content-length") ?? "0");
   if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_BYTES) {
-    return Response.json({ error: ["حجم الطلب أكبر من الحد المسموح"] }, { status: 413 });
+    return Response.json({ error: ["حجم الطلب أكبر من الحد المسموح"] }, { status: 413, headers: noStore });
   }
 
   try {
     const shipment = await createShipmentFromForm(user.id, await request.formData());
     const safeShipment = await db.shipment.findUnique({ where: { id: shipment.id }, select: shipmentApiSelect });
-    return Response.json({ shipment: safeShipment }, { status: 201, headers: { "cache-control": "no-store" } });
+    return Response.json({ shipment: safeShipment }, { status: 201, headers: noStore });
   } catch (error) {
     const message = error instanceof DomainValidationError ? error.issues : ["تعذر إنشاء الشحنة"];
-    return Response.json({ error: message }, { status: 400 });
+    return Response.json({ error: message }, { status: 400, headers: noStore });
   }
 }

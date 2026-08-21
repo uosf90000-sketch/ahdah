@@ -13,6 +13,7 @@ async function applyRuntimeSchema() {
   await db.$executeRawUnsafe('ALTER TABLE "Shipment" ADD COLUMN IF NOT EXISTS "deliveryLat" DOUBLE PRECISION');
   await db.$executeRawUnsafe('ALTER TABLE "Shipment" ADD COLUMN IF NOT EXISTS "deliveryLng" DOUBLE PRECISION');
   await db.$executeRawUnsafe('ALTER TABLE "Shipment" ADD COLUMN IF NOT EXISTS "deliveryNote" VARCHAR(300)');
+  await db.$executeRawUnsafe('ALTER TABLE "Shipment" ADD COLUMN IF NOT EXISTS "transportPreference" TEXT NOT NULL DEFAULT \'ANY\'');
 
   await db.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "ChatMessage" (

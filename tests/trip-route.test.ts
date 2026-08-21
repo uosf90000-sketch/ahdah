@@ -13,6 +13,29 @@ const roadTrip = {
   status: "OPEN",
 };
 
+const airTrip = {
+  ...roadTrip,
+  fromCity: "جدة",
+  toCity: "تبوك",
+  airline: "الخطوط السعودية",
+  flightNumber: "SV100",
+  availableWeightKg: 10,
+};
+
+const mixedTrip = {
+  fromCity: "الرياض",
+  toCity: "ينبع",
+  departureAt: new Date("2026-08-25T09:00:00Z"),
+  airline: MULTI_ROUTE_AIRLINE,
+  flightNumber: encodeItinerary([
+    { mode: "AIR" as const, from: "الرياض", to: "جدة", airline: "الخطوط السعودية", flightNumber: "SV101" },
+    { mode: "ROAD" as const, from: "جدة", to: "رابغ" },
+    { mode: "ROAD" as const, from: "رابغ", to: "ينبع" },
+  ]),
+  availableWeightKg: 15,
+  status: "OPEN",
+};
+
 test("يبني مسار الطريق بنفس ترتيب المحطات", () => {
   assert.deepEqual(tripRouteCities(roadTrip), ["أبها", "جيزان", "القنفذة", "جدة", "رابغ", "ينبع", "أملج", "الوجه", "ضبا", "تبوك"]);
 });
@@ -28,29 +51,37 @@ test("يرفض الاتجاه العكسي أو الوزن الأعلى", () => 
 });
 
 test("الطيران القديم يبقى مطابقًا للبداية والنهاية فقط", () => {
-  const airTrip = { ...roadTrip, fromCity: "جدة", toCity: "تبوك", airline: "الخطوط السعودية", flightNumber: "SV100", availableWeightKg: 10 };
   assert.equal(tripMatchesShipment(airTrip, { fromCity: "جدة", toCity: "تبوك", weightKg: 8, status: "NEW" }, now), true);
   assert.equal(tripMatchesShipment(airTrip, { fromCity: "رابغ", toCity: "تبوك", weightKg: 8, status: "NEW" }, now), false);
 });
 
 test("يطابق رحلة مختلطة من الرياض طيران إلى جدة ثم طريق إلى ينبع", () => {
-  const mixedTrip = {
-    fromCity: "الرياض",
-    toCity: "ينبع",
-    departureAt: new Date("2026-08-25T09:00:00Z"),
-    airline: MULTI_ROUTE_AIRLINE,
-    flightNumber: encodeItinerary([
-      { mode: "AIR", from: "الرياض", to: "جدة", airline: "الخطوط السعودية", flightNumber: "SV101" },
-      { mode: "ROAD", from: "جدة", to: "رابغ" },
-      { mode: "ROAD", from: "رابغ", to: "ينبع" },
-    ]),
-    availableWeightKg: 15,
-    status: "OPEN",
-  };
-
   assert.deepEqual(tripRouteCities(mixedTrip), ["الرياض", "جدة", "رابغ", "ينبع"]);
   assert.equal(tripMatchesShipment(mixedTrip, { fromCity: "الرياض", toCity: "ينبع", weightKg: 10, status: "NEW" }, now), true);
   assert.equal(tripMatchesShipment(mixedTrip, { fromCity: "الرياض", toCity: "جدة", weightKg: 10, status: "NEW" }, now), true);
   assert.equal(tripMatchesShipment(mixedTrip, { fromCity: "جدة", toCity: "ينبع", weightKg: 10, status: "NEW" }, now), true);
   assert.equal(tripMatchesShipment(mixedTrip, { fromCity: "ينبع", toCity: "جدة", weightKg: 10, status: "NEW" }, now), false);
+});
+
+test("اختيار الطريق فقط يمنع ظهور رحلات الطيران", () => {
+  assert.equal(tripMatchesShipment(roadTrip, { fromCity: "جدة", toCity: "ينبع", weightKg: 5, transportPreference: "ROAD", status: "NEW" }, now), true);
+  assert.equal(tripMatchesShipment(airTrip, { fromCity: "جدة", toCity: "تبوك", weightKg: 5, transportPreference: "ROAD", status: "NEW" }, now), false);
+});
+
+test("اختيار الطيران فقط يمنع ظهور رحلات الطريق", () => {
+  assert.equal(tripMatchesShipment(airTrip, { fromCity: "جدة", toCity: "تبوك", weightKg: 5, transportPreference: "AIR", status: "NEW" }, now), true);
+  assert.equal(tripMatchesShipment(roadTrip, { fromCity: "جدة", toCity: "ينبع", weightKg: 5, transportPreference: "AIR", status: "NEW" }, now), false);
+});
+
+test("اختيار كلاهما يظهر كل وسيلة مطابقة للمسار", () => {
+  assert.equal(tripMatchesShipment(roadTrip, { fromCity: "جدة", toCity: "ينبع", weightKg: 5, transportPreference: "ANY", status: "NEW" }, now), true);
+  assert.equal(tripMatchesShipment(airTrip, { fromCity: "جدة", toCity: "تبوك", weightKg: 5, transportPreference: "ANY", status: "NEW" }, now), true);
+  assert.equal(tripMatchesShipment(mixedTrip, { fromCity: "الرياض", toCity: "ينبع", weightKg: 5, transportPreference: "ANY", status: "NEW" }, now), true);
+});
+
+test("المسار المختلط يطابق طريقة النقل داخل الجزء المطلوب فقط", () => {
+  assert.equal(tripMatchesShipment(mixedTrip, { fromCity: "الرياض", toCity: "جدة", weightKg: 5, transportPreference: "AIR", status: "NEW" }, now), true);
+  assert.equal(tripMatchesShipment(mixedTrip, { fromCity: "جدة", toCity: "ينبع", weightKg: 5, transportPreference: "ROAD", status: "NEW" }, now), true);
+  assert.equal(tripMatchesShipment(mixedTrip, { fromCity: "الرياض", toCity: "ينبع", weightKg: 5, transportPreference: "AIR", status: "NEW" }, now), false);
+  assert.equal(tripMatchesShipment(mixedTrip, { fromCity: "الرياض", toCity: "ينبع", weightKg: 5, transportPreference: "ROAD", status: "NEW" }, now), false);
 });

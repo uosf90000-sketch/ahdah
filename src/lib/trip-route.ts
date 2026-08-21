@@ -25,6 +25,7 @@ export type ShipmentRouteLike = {
   fromCity: string;
   toCity: string;
   weightKg: number | string | { toString(): string };
+  transportPreference?: string | null;
   status?: string;
 };
 
@@ -89,6 +90,14 @@ export function tripTransportLabel(trip: Pick<TripRouteLike, "airline" | "flight
   return itinerary[0].airline || trip.airline || "طيران";
 }
 
+function transportModesBetween(trip: TripRouteLike, pickupIndex: number, deliveryIndex: number): Array<"AIR" | "ROAD"> {
+  const itinerary = decodeItinerary(trip);
+  if (itinerary.length) return itinerary.slice(pickupIndex, deliveryIndex).map((leg) => leg.mode);
+
+  const mode: "AIR" | "ROAD" = trip.airline === ROAD_AIRLINE ? "ROAD" : "AIR";
+  return Array.from({ length: deliveryIndex - pickupIndex }, () => mode);
+}
+
 export function tripMatchesShipment(trip: TripRouteLike, shipment: ShipmentRouteLike, now = new Date()) {
   if (trip.departureAt <= now) return false;
   if (Number(trip.availableWeightKg) < Number(shipment.weightKg)) return false;
@@ -98,5 +107,12 @@ export function tripMatchesShipment(trip: TripRouteLike, shipment: ShipmentRoute
   const route = tripRouteCities(trip).map(normalizeCity);
   const pickupIndex = route.indexOf(normalizeCity(shipment.fromCity));
   const deliveryIndex = route.indexOf(normalizeCity(shipment.toCity));
-  return pickupIndex >= 0 && deliveryIndex > pickupIndex;
+  if (pickupIndex < 0 || deliveryIndex <= pickupIndex) return false;
+
+  const preference = shipment.transportPreference || "ANY";
+  if (preference === "ANY") return true;
+  if (preference !== "AIR" && preference !== "ROAD") return false;
+
+  const modes = transportModesBetween(trip, pickupIndex, deliveryIndex);
+  return modes.length > 0 && modes.every((mode) => mode === preference);
 }

@@ -64,7 +64,7 @@ export async function exchangeGoogleCode(input: { code: string; verifier: string
   });
 
   if (!tokenResponse.ok) {
-    console.error("Google token exchange failed", tokenResponse.status, await tokenResponse.text());
+    console.error("Google token exchange failed", { status: tokenResponse.status });
     throw new Error("تعذر إكمال تسجيل الدخول باستخدام Google");
   }
 

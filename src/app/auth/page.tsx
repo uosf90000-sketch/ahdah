@@ -42,7 +42,7 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
 
         <section className="order-1 p-6 sm:p-10 lg:order-2">
           <div className="mb-7">
-            <p className="text-sm font-semibold text-palm-700">مرحبًا بك في عُهدة</p>
+            <p className="text-sm font-semibold text-palm-700">مرحبًا بك في عهدتك</p>
             <h2 className="mt-2 text-3xl font-bold">{register ? "أنشئ حسابك" : "سجّل الدخول"}</h2>
             <p className="mt-2 text-sm leading-7 text-slate-500">{register ? "ابدأ كمرسل ومسافر من الحساب نفسه." : "أدخل بياناتك للعودة إلى عُهدك ورحلاتك."}</p>
           </div>
@@ -71,7 +71,7 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
                 <div><label className="label" htmlFor="phone">رقم الجوال</label><input className="input" id="phone" name="phone" autoComplete="tel" inputMode="tel" placeholder="05xxxxxxxx" dir="ltr" /></div>
               </div>
               <div>
-                <label className="label" htmlFor="role">كيف ستستخدم عُهدة؟</label>
+                <label className="label" htmlFor="role">كيف ستستخدم تطبيق عهدتك؟</label>
                 <select className="select" id="role" name="role" defaultValue="BOTH" aria-describedby="role-help">
                   <option value="BOTH">مرسل ومسافر — موصى به</option>
                   <option value="SENDER">مرسل غالبًا</option>

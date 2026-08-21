@@ -39,6 +39,7 @@ export async function createSession(userId: string) {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
+    priority: "high",
     path: "/",
     expires: expiresAt,
   });
@@ -54,7 +55,25 @@ export async function destroySession() {
 export async function getCurrentUser() {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  const session = await db.session.findUnique({ where: { tokenHash: tokenHash(token) }, include: { user: true } });
+  const session = await db.session.findUnique({
+    where: { tokenHash: tokenHash(token) },
+    select: {
+      expiresAt: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          role: true,
+          googleSubject: true,
+          emailVerifiedAt: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
+    },
+  });
   if (!session || session.expiresAt <= new Date()) return null;
   return session.user;
 }

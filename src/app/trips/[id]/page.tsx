@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { CATEGORY_LABELS, formatDate } from "@/lib/domain";
-import { getMatchesForTrip } from "@/lib/services/shipment-service";
+import { getTravelerMatchesForTrip } from "@/lib/services/match-service";
 import { MessageBanner } from "@/components/message-banner";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ export default async function TripDetailPage({ params, searchParams }: { params:
   const query = await searchParams;
   const trip = await db.trip.findFirst({ where: { id, travelerId: user.id } });
   if (!trip) notFound();
-  const matches = await getMatchesForTrip(trip.id, user.id);
+  const matches = await getTravelerMatchesForTrip(trip.id, user.id);
   return (
     <div className="page-wrap section-space">
       <MessageBanner error={query.error} success={query.success} />
@@ -44,7 +44,7 @@ export default async function TripDetailPage({ params, searchParams }: { params:
           ))}
         </div>
       ) : (
-        <div className="card py-14 text-center"><PackageSearch className="mx-auto mb-4 text-palm-600" size={44} /><h3 className="text-xl font-black">لا توجد عُهد مطابقة الآن</h3><p className="muted mx-auto mt-2 max-w-md">سنعتبر رحلتك متاحة. جرّب لاحقًا بعد إضافة مرسلين جدد على نفس المسار.</p></div>
+        <div className="card py-14 text-center"><PackageSearch className="mx-auto mb-4 text-palm-600" size={44} /><h3 className="text-xl font-black">لا توجد عُهد من مستخدمين آخرين مطابقة الآن</h3><p className="muted mx-auto mt-2 max-w-md">لن نعرض لك طلبات الشحن التي أنشأتها أنت. تظهر هنا فقط طلبات مستخدمين آخرين المطابقة لمسارك ووزنك وموعدك.</p></div>
       )}
     </div>
   );

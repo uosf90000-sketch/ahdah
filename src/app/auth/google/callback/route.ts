@@ -10,6 +10,7 @@ import {
   GOOGLE_VERIFIER_COOKIE,
 } from "@/lib/google-oauth";
 import { getPublicOrigin } from "@/lib/public-origin";
+import { ensureRuntimeSchema } from "@/lib/runtime-schema";
 
 function authError(request: NextRequest, message: string) {
   const url = new URL("/auth", getPublicOrigin(request));
@@ -33,6 +34,8 @@ export async function GET(request: NextRequest) {
   let userId: string;
   try {
     const profile = await exchangeGoogleCode({ code, verifier, origin: publicOrigin });
+    await ensureRuntimeSchema();
+
     let user = await db.user.findFirst({
       where: { OR: [{ googleSubject: profile.sub }, { email: profile.email }] },
     });
@@ -62,8 +65,8 @@ export async function GET(request: NextRequest) {
     }
     userId = user.id;
   } catch (error) {
-    console.error(error);
-    return authError(request, error instanceof Error ? error.message : "تعذر تسجيل الدخول باستخدام Google");
+    console.error("Google sign-in failed", error);
+    return authError(request, "تعذر إكمال تسجيل الدخول باستخدام Google الآن. حاول مرة أخرى");
   }
 
   try {

@@ -10,7 +10,7 @@ import { PushNotifications } from "@capacitor/push-notifications";
 type PermissionState = "unknown" | "granted" | "denied" | "prompt";
 
 export function NativePermissionsPanel() {
-  const [native, setNative] = useState(false);
+  const [native] = useState(() => Capacitor.isNativePlatform());
   const [busy, setBusy] = useState<string | null>(null);
   const [camera, setCamera] = useState<PermissionState>("unknown");
   const [location, setLocation] = useState<PermissionState>("unknown");
@@ -18,16 +18,14 @@ export function NativePermissionsPanel() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const isNative = Capacitor.isNativePlatform();
-    setNative(isNative);
-    if (!isNative) return;
+    if (!native) return;
 
     void Promise.all([
       Camera.checkPermissions().then((status) => setCamera(normalizePermission(status.camera))),
       Geolocation.checkPermissions().then((status) => setLocation(normalizePermission(status.location))),
       PushNotifications.checkPermissions().then((status) => setNotifications(normalizePermission(status.receive))),
     ]).catch(() => setMessage("تعذر قراءة صلاحيات الجهاز الآن"));
-  }, []);
+  }, [native]);
 
   async function requestCamera() {
     setBusy("camera");

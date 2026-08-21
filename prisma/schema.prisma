@@ -106,6 +106,9 @@ model Shipment {
   pickupLat             Float?
   pickupLng             Float?
   pickupNote            String?          @db.VarChar(300)
+  deliveryLat           Float?
+  deliveryLng           Float?
+  deliveryNote          String?          @db.VarChar(300)
   weightKg              Decimal          @db.Decimal(8, 2)
   lengthCm              Decimal          @db.Decimal(8, 2)
   widthCm               Decimal          @db.Decimal(8, 2)

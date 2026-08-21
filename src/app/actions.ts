@@ -10,13 +10,12 @@ import {
   acceptOffer,
   advanceShipment,
   completeDelivery,
-  createOffer,
   createRating,
   createShipmentFromForm,
-  createTrip,
   inspectShipment,
   issueDeliveryOtp,
 } from "@/lib/services/shipment-service";
+import { createRouteAwareOffer, createRouteAwareTrip } from "@/lib/services/route-trip-service";
 
 function messageFrom(error: unknown) {
   if (error instanceof DomainValidationError) return error.issues.join("، ");
@@ -84,7 +83,7 @@ export async function createTripAction(formData: FormData) {
   const user = await requireUser();
   let destination = "/trips/new";
   try {
-    const trip = await createTrip(user.id, formData);
+    const trip = await createRouteAwareTrip(user.id, formData);
     revalidatePath("/dashboard");
     destination = `/trips/${trip.id}?success=${encodeURIComponent("تمت إضافة الرحلة وعرض الشحنات المطابقة")}`;
   } catch (error) {
@@ -102,7 +101,7 @@ export async function createOfferAction(formData: FormData) {
 
   try {
     if (!shipmentId || !tripId) throw new DomainValidationError(["تعذر تحديد الطلب أو الرحلة. افتح الطلب من قسم الطلبات المتاحة وحاول مرة أخرى"]);
-    await createOffer(user.id, shipmentId, tripId, formData);
+    await createRouteAwareOffer(user.id, shipmentId, tripId, formData);
     revalidatePath(`/shipments/${shipmentId}`);
     revalidatePath(`/trips/${tripId}`);
     revalidatePath("/dashboard");

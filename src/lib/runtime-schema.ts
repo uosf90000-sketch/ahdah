@@ -7,6 +7,10 @@ async function applyRuntimeSchema() {
   await db.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "emailVerifiedAt" TIMESTAMP(3)');
   await db.$executeRawUnsafe('CREATE UNIQUE INDEX IF NOT EXISTS "User_googleSubject_key" ON "User"("googleSubject")');
 
+  await db.$executeRawUnsafe('ALTER TABLE "Shipment" ADD COLUMN IF NOT EXISTS "pickupLat" DOUBLE PRECISION');
+  await db.$executeRawUnsafe('ALTER TABLE "Shipment" ADD COLUMN IF NOT EXISTS "pickupLng" DOUBLE PRECISION');
+  await db.$executeRawUnsafe('ALTER TABLE "Shipment" ADD COLUMN IF NOT EXISTS "pickupNote" VARCHAR(300)');
+
   await db.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "ChatMessage" (
       "id" TEXT NOT NULL,

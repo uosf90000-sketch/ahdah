@@ -9,6 +9,7 @@ import {
   CircleAlert,
   ClipboardCheck,
   MapPin,
+  MessageCircle,
   PackageCheck,
   Plane,
   QrCode,
@@ -68,7 +69,20 @@ export default async function ShipmentDetailPage({ params, searchParams }: { par
       <MessageBanner error={query.error} success={query.success} />
 
       <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div><div className="mb-3 flex items-center gap-3"><StatusBadge status={shipment.status} /><span className="text-xs font-bold text-slate-500">{shipment.refCode}</span></div><h1 className="title">{shipment.fromCity} ← {shipment.toCity}</h1><p className="muted mt-2">أُنشئت بواسطة {shipment.sender.name} · {formatDate(shipment.createdAt)}</p></div>
+        <div>
+          <div className="mb-3 flex flex-wrap items-center gap-3">
+            <StatusBadge status={shipment.status} />
+            <span className="text-xs font-bold text-slate-500">{shipment.refCode}</span>
+            {shipment.acceptedOffer && (isSender || isAcceptedTraveler) && (
+              <Link href={`/messages/${shipment.id}`} className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-palm-200 bg-palm-50 px-3 text-xs font-black text-palm-700 transition hover:border-palm-400 hover:bg-palm-100">
+                <MessageCircle size={15} aria-hidden="true" />
+                {isSender ? "تحدث مع الأمين" : "تحدث مع العميل"}
+              </Link>
+            )}
+          </div>
+          <h1 className="title">{shipment.fromCity} ← {shipment.toCity}</h1>
+          <p className="muted mt-2">أُنشئت بواسطة {shipment.sender.name} · {formatDate(shipment.createdAt)}</p>
+        </div>
         <div className="flex gap-3"><span className="pill"><Scale size={15} /> {shipment.weightKg.toString()} كجم</span><span className="pill"><Box size={15} /> {CATEGORY_LABELS[shipment.category]}</span></div>
       </div>
 

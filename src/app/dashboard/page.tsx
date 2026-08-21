@@ -39,7 +39,7 @@ export default async function DashboardPage() {
           <div>
             <p className="text-sm font-semibold text-blue-200">مرحبًا، {user.name.split(" ")[0]}</p>
             <h1 className="mt-2 text-3xl font-bold sm:text-4xl">ماذا تريد أن تنجز اليوم؟</h1>
-            <p className="mt-3 max-w-xl text-sm leading-7 text-slate-300">أرسل عُهدة جديدة أو سجّل رحلتك، وسنتولى مطابقة المسار والموعد والوزن.</p>
+            <p className="mt-3 max-w-xl text-sm leading-7 text-slate-300">أرسل عُهدة جديدة أو سجّل رحلتك، وسنتولى مطابقة المسار والوزن.</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:w-[29rem]">
             <Link href="/shipments/new" className="group flex min-h-24 items-center gap-4 rounded-3xl bg-white p-4 text-ink transition hover:-translate-y-0.5">
@@ -49,7 +49,7 @@ export default async function DashboardPage() {
             </Link>
             <Link href="/trips/new" className="group flex min-h-24 items-center gap-4 rounded-3xl border border-white/15 bg-white/10 p-4 text-white transition hover:bg-white/15">
               <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/10 text-blue-200"><Plane aria-hidden="true" size={23} /></span>
-              <span><strong className="block">إضافة رحلة</strong><small className="mt-1 block text-slate-300">استفد من وزنك</small></span>
+              <span><strong className="block">إضافة رحلة</strong><small className="mt-1 block text-slate-300">طيران أو على الطريق</small></span>
               <ArrowLeft aria-hidden="true" className="mr-auto text-blue-200 transition group-hover:-translate-x-1" size={19} />
             </Link>
           </div>
@@ -95,8 +95,8 @@ export default async function DashboardPage() {
                 </div>
                 <p className="mt-3 line-clamp-2 text-sm leading-7 text-slate-600">{shipment.contents}</p>
                 <div className="mt-4 flex items-center justify-between border-t border-palm-100 pt-3">
-                  <span className="text-xs text-slate-500">التسليم قبل {formatDate(shipment.requestedDeliveryAt)}</span>
-                  <Link href={`/shipments/${shipment.id}?trip=${trip.id}#offer`} className="inline-flex min-h-11 items-center gap-1 rounded-xl bg-palm-600 px-4 text-sm font-bold text-white">عرض وتقديم سعر <ArrowLeft size={15} /></Link>
+                  <span className="text-xs text-slate-500">وقت المرسل {formatDate(shipment.requestedDeliveryAt)}</span>
+                  <Link href={`/trips/${trip.id}#shipment-${shipment.id}`} className="inline-flex min-h-11 items-center gap-1 rounded-xl bg-palm-600 px-4 text-sm font-bold text-white">عرض وتقديم سعر <ArrowLeft size={15} /></Link>
                 </div>
               </article>
             ))}

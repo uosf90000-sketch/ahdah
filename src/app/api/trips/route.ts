@@ -1,7 +1,7 @@
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { DomainValidationError } from "@/lib/domain";
-import { createTrip } from "@/lib/services/shipment-service";
+import { createRouteAwareTrip } from "@/lib/services/route-trip-service";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) return Response.json({ error: "غير مصرح" }, { status: 401 });
   try {
-    const trip = await createTrip(user.id, await request.json() as Record<string, unknown>);
+    const trip = await createRouteAwareTrip(user.id, await request.json() as Record<string, unknown>);
     return Response.json({ trip }, { status: 201 });
   } catch (error) {
     const message = error instanceof DomainValidationError ? error.issues : ["تعذر إنشاء الرحلة"];

@@ -9,11 +9,13 @@ import {
   GOOGLE_STATE_COOKIE,
   GOOGLE_VERIFIER_COOKIE,
 } from "@/lib/google-oauth";
+import { GOOGLE_POLICY_CONSENT_COOKIE, LEGAL_POLICY_VERSION } from "@/lib/legal";
 import { getPublicOrigin } from "@/lib/public-origin";
 import { ensureRuntimeSchema } from "@/lib/runtime-schema";
 
-function authError(request: NextRequest, message: string) {
+function authError(request: NextRequest, message: string, tab?: "login" | "register") {
   const url = new URL("/auth", getPublicOrigin(request));
+  if (tab) url.searchParams.set("tab", tab);
   url.searchParams.set("error", message);
   return NextResponse.redirect(url);
 }
@@ -31,6 +33,8 @@ export async function GET(request: NextRequest) {
     return authError(request, "انتهت محاولة تسجيل الدخول أو لم تعد صالحة. حاول مرة أخرى");
   }
 
+  const policyConsentForAttempt = request.cookies.get(GOOGLE_POLICY_CONSENT_COOKIE)?.value === state;
+
   let userId: string;
   try {
     const profile = await exchangeGoogleCode({ code, verifier, origin: publicOrigin });
@@ -45,13 +49,22 @@ export async function GET(request: NextRequest) {
     }
 
     if (user) {
-      if (!user.googleSubject || !user.emailVerifiedAt) {
+      const shouldUpdateIdentity = !user.googleSubject || !user.emailVerifiedAt;
+      const shouldRecordConsent = policyConsentForAttempt && user.policyVersion !== LEGAL_POLICY_VERSION;
+      if (shouldUpdateIdentity || shouldRecordConsent) {
         user = await db.user.update({
           where: { id: user.id },
-          data: { googleSubject: profile.sub, emailVerifiedAt: user.emailVerifiedAt ?? new Date() },
+          data: {
+            ...(shouldUpdateIdentity ? { googleSubject: profile.sub, emailVerifiedAt: user.emailVerifiedAt ?? new Date() } : {}),
+            ...(shouldRecordConsent ? { policyAcceptedAt: new Date(), policyVersion: LEGAL_POLICY_VERSION } : {}),
+          },
         });
       }
     } else {
+      if (!policyConsentForAttempt) {
+        return authError(request, "لإنشاء حساب جديد باستخدام Google يجب الموافقة على الشروط والسياسات أولًا", "register");
+      }
+
       user = await db.user.create({
         data: {
           name: profile.name?.trim() || profile.email.split("@")[0],
@@ -60,6 +73,8 @@ export async function GET(request: NextRequest) {
           passwordHash: "oauth:google",
           googleSubject: profile.sub,
           emailVerifiedAt: new Date(),
+          policyAcceptedAt: new Date(),
+          policyVersion: LEGAL_POLICY_VERSION,
         },
       });
     }
@@ -73,6 +88,7 @@ export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
     cookieStore.delete(GOOGLE_STATE_COOKIE);
     cookieStore.delete(GOOGLE_VERIFIER_COOKIE);
+    cookieStore.delete(GOOGLE_POLICY_CONSENT_COOKIE);
     await createSession(userId);
   } catch (error) {
     console.error(error);

@@ -4,6 +4,8 @@ export const GOOGLE_STATE_COOKIE = "ahdah_google_oauth_state";
 export const GOOGLE_VERIFIER_COOKIE = "ahdah_google_oauth_verifier";
 export const GOOGLE_COOKIE_MAX_AGE = 10 * 60;
 
+const GOOGLE_REQUEST_TIMEOUT_MS = 10_000;
+
 export function googleOAuthConfigured() {
   return Boolean(process.env.GOOGLE_CLIENT_ID?.trim() && process.env.GOOGLE_CLIENT_SECRET?.trim());
 }
@@ -61,6 +63,7 @@ export async function exchangeGoogleCode(input: { code: string; verifier: string
       code_verifier: input.verifier,
     }),
     cache: "no-store",
+    signal: AbortSignal.timeout(GOOGLE_REQUEST_TIMEOUT_MS),
   });
 
   if (!tokenResponse.ok) {
@@ -74,6 +77,7 @@ export async function exchangeGoogleCode(input: { code: string; verifier: string
   const profileResponse = await fetch("https://openidconnect.googleapis.com/v1/userinfo", {
     headers: { authorization: `Bearer ${token.access_token}` },
     cache: "no-store",
+    signal: AbortSignal.timeout(GOOGLE_REQUEST_TIMEOUT_MS),
   });
   if (!profileResponse.ok) throw new Error("تعذر قراءة حساب Google");
 

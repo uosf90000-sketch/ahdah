@@ -22,6 +22,7 @@ import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { CATEGORY_LABELS, formatDate, formatMoney, type ShipmentStatusName } from "@/lib/domain";
 import { shipmentDetailInclude } from "@/lib/services/shipment-service";
+import { tripMatchesShipment } from "@/lib/trip-route";
 import {
   acceptOfferAction,
   advanceShipmentAction,
@@ -48,17 +49,16 @@ export default async function ShipmentDetailPage({ params, searchParams }: { par
   const isOpen = ["NEW", "RECEIVING_OFFERS"].includes(shipment.status);
   if (!isOpen && !isSender && !isAcceptedTraveler) notFound();
 
-  const compatibleTrips = !isSender && isOpen ? await db.trip.findMany({
+  const candidateTrips = !isSender && isOpen ? await db.trip.findMany({
     where: {
       travelerId: user.id,
       status: "OPEN",
-      fromCity: shipment.fromCity,
-      toCity: shipment.toCity,
       availableWeightKg: { gte: shipment.weightKg },
       departureAt: { gt: new Date() },
     },
     orderBy: { departureAt: "asc" },
   }) : [];
+  const compatibleTrips = candidateTrips.filter((trip) => tripMatchesShipment(trip, shipment));
   const hasOwnOffer = shipment.offers.some((offer) => offer.travelerId === user.id);
   if (!isSender && isOpen && !compatibleTrips.length && !hasOwnOffer) notFound();
   const originalPhotos = shipment.photos.filter((photo) => photo.kind === "ORIGINAL");
@@ -67,6 +67,7 @@ export default async function ShipmentDetailPage({ params, searchParams }: { par
   const senderRating = await db.rating.aggregate({ where: { targetId: shipment.senderId }, _avg: { score: true }, _count: true });
   const ratingTargetName = isSender ? shipment.acceptedOffer?.traveler.name : shipment.sender.name;
   const ratingTargetRole = isSender ? "الأمين" : "المرسل";
+  const recipientDisplayName = isSender || isAcceptedTraveler ? shipment.recipientName : "يظهر بعد قبول العرض";
 
   return (
     <div className="page-wrap section-space">
@@ -101,7 +102,7 @@ export default async function ShipmentDetailPage({ params, searchParams }: { par
               <Fact Icon={CalendarDays} label="وقت المرسل للتنسيق" value={formatDate(shipment.requestedDeliveryAt)} />
               <Fact Icon={Scale} label="الوزن" value={`${shipment.weightKg.toString()} كجم`} />
               <Fact Icon={ShieldCheck} label="القيمة التقريبية" value={formatMoney(shipment.approximateValueSar)} />
-              <Fact Icon={UserRoundCheck} label="المستلم" value={shipment.recipientName} />
+              <Fact Icon={UserRoundCheck} label="المستلم" value={recipientDisplayName} />
             </div>
             <div className="mt-5 rounded-2xl bg-slate-50 p-5"><p className="mb-2 text-xs font-bold text-slate-500">وصف المحتويات</p><p className="whitespace-pre-wrap text-sm leading-8 text-slate-700">{shipment.contents}</p></div>
           </section>

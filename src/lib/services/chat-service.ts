@@ -3,6 +3,10 @@ import { db } from "@/lib/db";
 import { DomainValidationError } from "@/lib/domain";
 
 const closedStatuses = new Set<ShipmentStatus>([ShipmentStatus.DELIVERED, ShipmentStatus.CANCELLED]);
+const locationEditableStatuses = new Set<ShipmentStatus>([
+  ShipmentStatus.TRAVELER_ACCEPTED,
+  ShipmentStatus.INSPECTED,
+]);
 
 export async function getChatContext(userId: string, shipmentId: string) {
   const shipment = await db.shipment.findUnique({
@@ -78,6 +82,9 @@ export async function updateChatLocation(
   const { shipment, writable } = await getChatContext(userId, shipmentId);
   if (!writable) throw new DomainValidationError(["لا يمكن تعديل الموقع بعد انتهاء العُهدة"]);
   if (shipment.senderId !== userId) throw new DomainValidationError(["تحديد موقع الاستلام والتسليم متاح للمرسل فقط"]);
+  if (!locationEditableStatuses.has(shipment.status)) {
+    throw new DomainValidationError(["لا يمكن تغيير موقع الاستلام أو التسليم بعد استلام الموصل للعُهدة"]);
+  }
   if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lng) || lng < -180 || lng > 180) {
     throw new DomainValidationError(["حدد موقعًا صحيحًا على الخريطة"]);
   }

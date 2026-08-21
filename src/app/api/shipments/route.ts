@@ -1,6 +1,7 @@
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { DomainValidationError } from "@/lib/domain";
+import { InvalidRequestBodyError, readFormDataWithLimit, RequestBodyTooLargeError } from "@/lib/request-body";
 import { createShipmentFromForm } from "@/lib/services/shipment-service";
 
 export const dynamic = "force-dynamic";
@@ -62,16 +63,19 @@ export async function POST(request: Request) {
   if (!contentType.toLowerCase().startsWith("multipart/form-data")) {
     return Response.json({ error: ["يجب رفع الصور كملفات multipart/form-data"] }, { status: 415, headers: noStore });
   }
-  const contentLength = Number(request.headers.get("content-length") ?? "0");
-  if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_BYTES) {
-    return Response.json({ error: ["حجم الطلب أكبر من الحد المسموح"] }, { status: 413, headers: noStore });
-  }
 
   try {
-    const shipment = await createShipmentFromForm(user.id, await request.formData());
+    const formData = await readFormDataWithLimit(request, MAX_REQUEST_BYTES);
+    const shipment = await createShipmentFromForm(user.id, formData);
     const safeShipment = await db.shipment.findUnique({ where: { id: shipment.id }, select: shipmentApiSelect });
     return Response.json({ shipment: safeShipment }, { status: 201, headers: noStore });
   } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) {
+      return Response.json({ error: ["حجم الطلب أكبر من الحد المسموح"] }, { status: 413, headers: noStore });
+    }
+    if (error instanceof InvalidRequestBodyError) {
+      return Response.json({ error: ["تعذر قراءة بيانات الطلب"] }, { status: 400, headers: noStore });
+    }
     const message = error instanceof DomainValidationError ? error.issues : ["تعذر إنشاء الشحنة"];
     return Response.json({ error: message }, { status: 400, headers: noStore });
   }

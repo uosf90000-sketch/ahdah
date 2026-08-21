@@ -7,15 +7,38 @@ import { formatDate } from "@/lib/domain";
 import { MessageBanner } from "@/components/message-banner";
 import { SubmitButton } from "@/components/submit-button";
 
-export const dynamic = "force-dynamic";
-export const metadata = { title: "تأكيد استلام العُهدة" };
+const DELIVERY_TOKEN_PATTERN = /^[A-Za-z0-9_-]{20,128}$/;
 
-export default async function HandoverPage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ error?: string; success?: string; demoOtp?: string; delivered?: string }> }) {
+export const dynamic = "force-dynamic";
+export const metadata = {
+  title: "تأكيد استلام العُهدة",
+  robots: { index: false, follow: false, noarchive: true },
+};
+
+export default async function HandoverPage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ error?: string; success?: string; demoOtp?: string }> }) {
   const { token } = await params;
+  if (!DELIVERY_TOKEN_PATTERN.test(token)) notFound();
+
   const query = await searchParams;
-  const shipment = await db.shipment.findUnique({ where: { qrToken: token }, include: { acceptedOffer: { include: { traveler: true } } } });
+  const shipment = await db.shipment.findUnique({
+    where: { qrToken: token },
+    select: {
+      refCode: true,
+      fromCity: true,
+      toCity: true,
+      recipientName: true,
+      recipientPhone: true,
+      requestedDeliveryAt: true,
+      status: true,
+      acceptedOffer: { select: { traveler: { select: { name: true } } } },
+    },
+  });
   if (!shipment) notFound();
-  const delivered = shipment.status === "DELIVERED" || query.delivered === "1";
+
+  const delivered = shipment.status === "DELIVERED";
+  const demoMode = process.env.NODE_ENV !== "production" && process.env.ENABLE_DEMO_OTP === "true";
+  const demoOtp = demoMode && /^\d{4}$/.test(query.demoOtp ?? "") ? query.demoOtp : null;
+
   return (
     <div className="page-wrap section-space">
       <div className="mx-auto max-w-lg">
@@ -33,7 +56,7 @@ export default async function HandoverPage({ params, searchParams }: { params: P
               <section className="card space-y-5">
                 <div className="flex items-start gap-3 rounded-2xl bg-palm-50 p-4 text-sm leading-7 text-palm-700"><ShieldCheck className="mt-1 shrink-0" size={19} /><p>اطلب الرمز ثم أدخله أمام المسافر بعد معاينة العُهدة. الرمز مكوّن من 4 أرقام وصالح لمدة 10 دقائق.</p></div>
                 <form action={sendOtpAction}><input type="hidden" name="token" value={token} /><SubmitButton className="btn-secondary w-full" pendingText="جاري إرسال الرمز..."><Send size={18} /> إرسال OTP إلى جوال المستلم</SubmitButton></form>
-                {query.demoOtp && <div className="rounded-2xl border border-dashed border-palm-500 bg-palm-50 p-4 text-center"><p className="text-xs font-bold text-palm-700">رمز وضع التجربة</p><p className="mt-1 text-3xl font-black tracking-[.3em]" dir="ltr">{query.demoOtp}</p></div>}
+                {demoOtp && <div className="rounded-2xl border border-dashed border-palm-500 bg-palm-50 p-4 text-center"><p className="text-xs font-bold text-palm-700">رمز وضع التجربة</p><p className="mt-1 text-3xl font-black tracking-[.3em]" dir="ltr">{demoOtp}</p></div>}
                 <form action={completeDeliveryAction} className="space-y-4"><input type="hidden" name="token" value={token} /><div><label className="label" htmlFor="otp">رمز الاستلام المكوّن من 4 أرقام</label><input className="input text-center text-2xl font-black tracking-[.35em]" id="otp" name="otp" inputMode="numeric" pattern="[0-9]{4}" maxLength={4} required dir="ltr" placeholder="••••" autoComplete="one-time-code" /></div><SubmitButton className="btn-primary w-full" pendingText="جاري تأكيد التسليم..."><KeyRound size={18} /> تأكيد الاستلام وإنهاء العُهدة</SubmitButton></form>
               </section>
             ) : <div className="card text-center"><p className="muted">لا يمكن إتمام التسليم لأن حالة العُهدة الحالية ليست «وصلت للوجهة».</p></div>}

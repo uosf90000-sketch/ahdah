@@ -5,6 +5,8 @@ let runtimeSchemaPromise: Promise<void> | null = null;
 async function applyRuntimeSchema() {
   await db.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "googleSubject" TEXT');
   await db.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "emailVerifiedAt" TIMESTAMP(3)');
+  await db.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "policyAcceptedAt" TIMESTAMP(3)');
+  await db.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "policyVersion" VARCHAR(20)');
   await db.$executeRawUnsafe('CREATE UNIQUE INDEX IF NOT EXISTS "User_googleSubject_key" ON "User"("googleSubject")');
 
   await db.$executeRawUnsafe('ALTER TABLE "Shipment" ADD COLUMN IF NOT EXISTS "pickupLat" DOUBLE PRECISION');

@@ -96,7 +96,7 @@ export function validateShipmentInput(input: FormData | Record<string, unknown>)
   required(data.fromCity, "مدينة الإرسال", issues);
   required(data.toCity, "مدينة الوصول", issues);
   required(data.contents, "وصف المحتويات", issues);
-  required(data.requestedDeliveryAt, "موعد التسليم", issues);
+  required(data.requestedDeliveryAt, "آخر وقت لاستلام العُهدة من المرسل", issues);
   required(data.recipientName, "اسم المستلم", issues);
   required(data.recipientPhone, "رقم المستلم", issues);
   if (!pickupLatRaw || !pickupLngRaw) issues.push("حدد موقع استلام العُهدة على الخريطة");
@@ -112,7 +112,7 @@ export function validateShipmentInput(input: FormData | Record<string, unknown>)
   if (data.contents.length < 15) issues.push("اكتب وصفًا أوضح للمحتويات (15 حرفًا على الأقل)");
   if (!/^05\d{8}$/.test(data.recipientPhone)) issues.push("رقم المستلم يجب أن يكون رقم جوال سعوديًا مثل 05xxxxxxxx");
   const deliveryDate = new Date(data.requestedDeliveryAt);
-  if (Number.isNaN(deliveryDate.getTime()) || deliveryDate <= new Date()) issues.push("موعد التسليم يجب أن يكون في المستقبل");
+  if (Number.isNaN(deliveryDate.getTime()) || deliveryDate <= new Date()) issues.push("آخر وقت لاستلام العُهدة يجب أن يكون في المستقبل");
 
   if (issues.length) throw new DomainValidationError(issues);
   return { ...data, requestedDeliveryAt: deliveryDate };
@@ -172,7 +172,7 @@ export function isTripMatch(trip: MatchableTrip, shipment: MatchableShipment, no
     normalizeCity(trip.fromCity) === normalizeCity(shipment.fromCity) &&
     normalizeCity(trip.toCity) === normalizeCity(shipment.toCity) &&
     trip.departureAt > now &&
-    trip.departureAt <= shipment.requestedDeliveryAt &&
+    shipment.requestedDeliveryAt <= trip.departureAt &&
     trip.availableWeightKg >= shipment.weightKg &&
     (!trip.status || trip.status === "OPEN") &&
     (!shipment.status || ["NEW", "RECEIVING_OFFERS"].includes(shipment.status))

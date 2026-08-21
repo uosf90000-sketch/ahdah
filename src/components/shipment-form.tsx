@@ -4,18 +4,19 @@ import { ArrowLeft, ArrowRight, Camera, Check, CircleAlert, MapPin, PackageCheck
 import { useRef, useState } from "react";
 import { createShipmentAction } from "@/app/actions";
 import { CATEGORY_LABELS, SAUDI_CITIES } from "@/lib/domain";
-import { PickupLocationPicker, type PickupCoordinates } from "@/components/pickup-location-picker";
+import { PickupLocationPicker, type LocationCoordinates } from "@/components/pickup-location-picker";
 import { SubmitButton } from "@/components/submit-button";
 
 const steps = [
-  { label: "المسار", Icon: MapPin },
+  { label: "المواقع", Icon: MapPin },
   { label: "العُهدة", Icon: Scale },
   { label: "المستلم", Icon: UserRound },
 ];
 
 export function ShipmentForm({ minDate }: { minDate: string }) {
   const [step, setStep] = useState(0);
-  const [pickup, setPickup] = useState<PickupCoordinates | null>(null);
+  const [pickup, setPickup] = useState<LocationCoordinates | null>(null);
+  const [delivery, setDelivery] = useState<LocationCoordinates | null>(null);
   const [locationError, setLocationError] = useState(false);
   const sections = useRef<Array<HTMLFieldSetElement | null>>([]);
 
@@ -28,7 +29,7 @@ export function ShipmentForm({ minDate }: { minDate: string }) {
       invalid.reportValidity();
       return;
     }
-    if (step === 0 && !pickup) {
+    if (step === 0 && (!pickup || !delivery)) {
       setLocationError(true);
       return;
     }
@@ -53,15 +54,12 @@ export function ShipmentForm({ minDate }: { minDate: string }) {
 
       <div className="p-5 sm:p-7">
         <fieldset ref={(node) => { sections.current[0] = node; }} hidden={step !== 0}>
-          <legend className="text-xl font-bold">إلى أين ومتى؟</legend>
-          <p className="mt-2 text-sm leading-7 text-slate-500">نستخدم المسار والوزن للمطابقة، والموعد يبقى للتنسيق بين الطرفين.</p>
-          <div className="mt-7 grid-form">
-            <CitySelect name="fromCity" label="مدينة الإرسال" />
-            <CitySelect name="toCity" label="مدينة الوصول" />
-            <div className="sm:col-span-2"><label className="label" htmlFor="requestedDeliveryAt">آخر وقت مناسب للاستلام من المرسل</label><input className="input" id="requestedDeliveryAt" name="requestedDeliveryAt" type="datetime-local" min={minDate} required /></div>
-          </div>
-          <div className="mt-6">
+          <legend className="text-xl font-bold">موقع الاستلام والتسليم</legend>
+          <p className="mt-2 text-sm leading-7 text-slate-500">حدد النقطتين أولًا. لا تظهر المواقع الدقيقة للموصل إلا بعد قبول عرضه.</p>
+
+          <div className="mt-7 space-y-6">
             <PickupLocationPicker
+              kind="pickup"
               value={pickup}
               showError={locationError}
               onChange={(next) => {
@@ -69,6 +67,25 @@ export function ShipmentForm({ minDate }: { minDate: string }) {
                 setLocationError(false);
               }}
             />
+            <PickupLocationPicker
+              kind="delivery"
+              value={delivery}
+              showError={locationError}
+              onChange={(next) => {
+                setDelivery(next);
+                setLocationError(false);
+              }}
+            />
+          </div>
+
+          <div className="mt-7 border-t border-slate-200 pt-7">
+            <h2 className="text-lg font-bold">المسار والموعد</h2>
+            <p className="mt-1 text-sm leading-7 text-slate-500">نستخدم المسار والوزن للمطابقة، والموعد للتنسيق فقط.</p>
+            <div className="mt-5 grid-form">
+              <CitySelect name="fromCity" label="مدينة الإرسال" />
+              <CitySelect name="toCity" label="مدينة الوصول" />
+              <div className="sm:col-span-2"><label className="label" htmlFor="requestedDeliveryAt">آخر وقت مناسب للاستلام من المرسل</label><input className="input" id="requestedDeliveryAt" name="requestedDeliveryAt" type="datetime-local" min={minDate} required /></div>
+            </div>
           </div>
         </fieldset>
 
@@ -98,6 +115,7 @@ export function ShipmentForm({ minDate }: { minDate: string }) {
           <div className="mt-6 rounded-3xl bg-slate-50 p-5">
             <h2 className="flex items-center gap-2 font-bold"><PackageCheck aria-hidden="true" className="text-palm-600" size={20} /> قبل النشر</h2>
             <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
+              <li className="flex gap-2"><Check aria-hidden="true" className="mt-0.5 shrink-0 text-emerald-600" size={17} /> تم تحديد موقع الاستلام وموقع التسليم.</li>
               <li className="flex gap-2"><Check aria-hidden="true" className="mt-0.5 shrink-0 text-emerald-600" size={17} /> الصور تُظهر جميع المحتويات بوضوح.</li>
               <li className="flex gap-2"><Check aria-hidden="true" className="mt-0.5 shrink-0 text-emerald-600" size={17} /> الوزن والقيمة والوصف صحيحة.</li>
               <li className="flex gap-2"><CircleAlert aria-hidden="true" className="mt-0.5 shrink-0 text-sand-500" size={17} /> لا توجد مواد محظورة أو غير مصرح بها للطيران.</li>

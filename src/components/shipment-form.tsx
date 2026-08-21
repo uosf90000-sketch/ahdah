@@ -1,24 +1,20 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, Camera, Check, CircleAlert, MapPin, PackageCheck, Scale, UserRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, Camera, Check, CircleAlert, PackageCheck, Route, Scale, UserRound } from "lucide-react";
 import { useRef, useState } from "react";
 import { createShipmentAction } from "@/app/actions";
 import { CATEGORY_LABELS } from "@/lib/domain";
-import { PickupLocationPicker, type LocationCoordinates } from "@/components/pickup-location-picker";
 import { SaudiPlaceInput } from "@/components/saudi-place-input";
 import { SubmitButton } from "@/components/submit-button";
 
 const steps = [
-  { label: "المواقع", Icon: MapPin },
+  { label: "المسار", Icon: Route },
   { label: "العُهدة", Icon: Scale },
   { label: "المستلم", Icon: UserRound },
 ];
 
 export function ShipmentForm({ minDate }: { minDate: string }) {
   const [step, setStep] = useState(0);
-  const [pickup, setPickup] = useState<LocationCoordinates | null>(null);
-  const [delivery, setDelivery] = useState<LocationCoordinates | null>(null);
-  const [locationError, setLocationError] = useState(false);
   const sections = useRef<Array<HTMLFieldSetElement | null>>([]);
 
   function goNext() {
@@ -28,10 +24,6 @@ export function ShipmentForm({ minDate }: { minDate: string }) {
     const invalid = controls.find((control) => !control.checkValidity());
     if (invalid) {
       invalid.reportValidity();
-      return;
-    }
-    if (step === 0 && (!pickup || !delivery)) {
-      setLocationError(true);
       return;
     }
     setStep((current) => Math.min(current + 1, steps.length - 1));
@@ -55,49 +47,24 @@ export function ShipmentForm({ minDate }: { minDate: string }) {
 
       <div className="p-5 sm:p-7">
         <fieldset ref={(node) => { sections.current[0] = node; }} hidden={step !== 0}>
-          <legend className="text-xl font-bold">موقع الاستلام والتسليم</legend>
-          <p className="mt-2 text-sm leading-7 text-slate-500">حدد النقطتين أولًا. لا تظهر المواقع الدقيقة للموصل إلا بعد قبول عرضه.</p>
+          <legend className="text-xl font-bold">المسار وطريقة النقل</legend>
+          <p className="mt-2 text-sm leading-7 text-slate-500">حدد مكان الإرسال والوصول وطريقة النقل. المواقع الدقيقة تُحدد داخل المحادثة بعد قبول العرض.</p>
 
-          <div className="mt-7 space-y-6">
-            <PickupLocationPicker
-              kind="pickup"
-              value={pickup}
-              showError={locationError}
-              onChange={(next) => {
-                setPickup(next);
-                setLocationError(false);
-              }}
-            />
-            <PickupLocationPicker
-              kind="delivery"
-              value={delivery}
-              showError={locationError}
-              onChange={(next) => {
-                setDelivery(next);
-                setLocationError(false);
-              }}
-            />
+          <div className="mt-7 grid-form">
+            <SaudiPlaceInput id="fromCity" name="fromCity" label="مكان الإرسال" />
+            <SaudiPlaceInput id="toCity" name="toCity" label="مكان الوصول" />
           </div>
 
-          <div className="mt-7 border-t border-slate-200 pt-7">
-            <h2 className="text-lg font-bold">المسار وطريقة النقل</h2>
-            <p className="mt-1 text-sm leading-7 text-slate-500">نطابق حسب المسار والوزن وطريقة النقل التي تختارها، والموعد للتنسيق فقط.</p>
-            <div className="mt-5 grid-form">
-              <SaudiPlaceInput id="fromCity" name="fromCity" label="مكان الإرسال" />
-              <SaudiPlaceInput id="toCity" name="toCity" label="مكان الوصول" />
-            </div>
-
-            <div className="mt-6">
-              <label className="label" htmlFor="transportPreference">طريقة النقل</label>
-              <select className="select" id="transportPreference" name="transportPreference" defaultValue="ANY" required>
-                <option value="AIR">طيران فقط</option>
-                <option value="ROAD">على الطريق فقط</option>
-                <option value="ANY">كلاهما</option>
-              </select>
-            </div>
-
-            <div className="mt-6"><label className="label" htmlFor="requestedDeliveryAt">آخر وقت مناسب للاستلام من المرسل</label><input className="input" id="requestedDeliveryAt" name="requestedDeliveryAt" type="datetime-local" min={minDate} required /></div>
+          <div className="mt-6">
+            <label className="label" htmlFor="transportPreference">طريقة النقل</label>
+            <select className="select" id="transportPreference" name="transportPreference" defaultValue="ANY" required>
+              <option value="AIR">طيران فقط</option>
+              <option value="ROAD">على الطريق فقط</option>
+              <option value="ANY">كلاهما</option>
+            </select>
           </div>
+
+          <div className="mt-6"><label className="label" htmlFor="requestedDeliveryAt">آخر وقت مناسب للاستلام من المرسل</label><input className="input" id="requestedDeliveryAt" name="requestedDeliveryAt" type="datetime-local" min={minDate} required /></div>
         </fieldset>
 
         <fieldset ref={(node) => { sections.current[1] = node; }} hidden={step !== 1}>
@@ -126,7 +93,6 @@ export function ShipmentForm({ minDate }: { minDate: string }) {
           <div className="mt-6 rounded-3xl bg-slate-50 p-5">
             <h2 className="flex items-center gap-2 font-bold"><PackageCheck aria-hidden="true" className="text-palm-600" size={20} /> قبل النشر</h2>
             <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
-              <li className="flex gap-2"><Check aria-hidden="true" className="mt-0.5 shrink-0 text-emerald-600" size={17} /> تم تحديد موقع الاستلام وموقع التسليم.</li>
               <li className="flex gap-2"><Check aria-hidden="true" className="mt-0.5 shrink-0 text-emerald-600" size={17} /> تم اختيار طريقة النقل المناسبة.</li>
               <li className="flex gap-2"><Check aria-hidden="true" className="mt-0.5 shrink-0 text-emerald-600" size={17} /> الصور تُظهر جميع المحتويات بوضوح.</li>
               <li className="flex gap-2"><Check aria-hidden="true" className="mt-0.5 shrink-0 text-emerald-600" size={17} /> الوزن والقيمة والوصف صحيحة.</li>

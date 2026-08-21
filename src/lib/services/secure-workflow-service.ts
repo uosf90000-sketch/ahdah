@@ -12,6 +12,7 @@ import { DomainValidationError } from "@/lib/domain";
 
 const OTP_MAX_ATTEMPTS = 5;
 const OTP_RESEND_COOLDOWN_MS = 60_000;
+const OTP_LOCKOUT_MS = 15 * 60_000;
 const DELIVERY_TOKEN_PATTERN = /^[A-Za-z0-9_-]{20,128}$/;
 
 function otpSecret() {
@@ -127,6 +128,7 @@ export async function issueDeliveryOtpSafely(qrToken: string) {
       status: true,
       recipientPhone: true,
       refCode: true,
+      deliveryOtpAttempts: true,
       deliveryOtpLastSentAt: true,
     },
   });
@@ -135,6 +137,14 @@ export async function issueDeliveryOtpSafely(qrToken: string) {
   }
 
   const now = new Date();
+  if (
+    shipment.deliveryOtpAttempts >= OTP_MAX_ATTEMPTS &&
+    shipment.deliveryOtpLastSentAt &&
+    now.getTime() - shipment.deliveryOtpLastSentAt.getTime() < OTP_LOCKOUT_MS
+  ) {
+    throw new DomainValidationError(["تم إيقاف محاولات الرمز مؤقتًا. حاول طلب رمز جديد بعد 15 دقيقة"]);
+  }
+
   const cooldownCutoff = new Date(now.getTime() - OTP_RESEND_COOLDOWN_MS);
   const reserved = await db.shipment.updateMany({
     where: {

@@ -57,7 +57,7 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
           {googleEnabled && (
             <>
               {register ? (
-                <form action="/auth/google" method="get" className="mb-5 space-y-3">
+                <form action="/auth/google" method="post" className="mb-5 space-y-3">
                   <PolicyConsent id="google-policy-consent" name="consent" value="1" />
                   <button type="submit" className="flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl border border-slate-300 bg-white px-5 text-sm font-semibold text-ink transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100">
                     <GoogleIcon /> إنشاء الحساب باستخدام Google

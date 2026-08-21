@@ -45,6 +45,14 @@ export const CATEGORY_LABELS = {
   OTHER: "أخرى",
 } as const;
 
+export const TRANSPORT_PREFERENCE_LABELS = {
+  AIR: "طيران فقط",
+  ROAD: "على الطريق فقط",
+  ANY: "طيران أو طريق",
+} as const;
+
+export type TransportPreference = keyof typeof TRANSPORT_PREFERENCE_LABELS;
+
 export class DomainValidationError extends Error {
   readonly issues: string[];
 
@@ -95,6 +103,7 @@ export function validateShipmentInput(input: FormData | Record<string, unknown>)
     deliveryLat: Number(deliveryLatRaw),
     deliveryLng: Number(deliveryLngRaw),
     deliveryNote: textValue(input, "deliveryNote"),
+    transportPreference: (textValue(input, "transportPreference") || "ANY") as TransportPreference,
     weightKg: numberValue(input, "weightKg"),
     category: textValue(input, "category"),
     contents: textValue(input, "contents"),
@@ -104,17 +113,18 @@ export function validateShipmentInput(input: FormData | Record<string, unknown>)
     recipientPhone: textValue(input, "recipientPhone"),
   };
 
-  required(data.fromCity, "مدينة الإرسال", issues);
-  required(data.toCity, "مدينة الوصول", issues);
+  required(data.fromCity, "مكان الإرسال", issues);
+  required(data.toCity, "مكان الوصول", issues);
   required(data.contents, "وصف المحتويات", issues);
   required(data.requestedDeliveryAt, "آخر وقت لاستلام العُهدة من المرسل", issues);
   required(data.recipientName, "اسم المستلم", issues);
   required(data.recipientPhone, "رقم المستلم", issues);
   validateCoordinates(pickupLatRaw, pickupLngRaw, data.pickupLat, data.pickupLng, "موقع الاستلام", issues);
   validateCoordinates(deliveryLatRaw, deliveryLngRaw, data.deliveryLat, data.deliveryLng, "موقع التسليم", issues);
+  if (!Object.hasOwn(TRANSPORT_PREFERENCE_LABELS, data.transportPreference)) issues.push("اختر طريقة نقل صحيحة");
   if (data.pickupNote.length > 300) issues.push("ملاحظة موقع الاستلام طويلة جدًا");
   if (data.deliveryNote.length > 300) issues.push("ملاحظة موقع التسليم طويلة جدًا");
-  if (data.fromCity && data.fromCity === data.toCity) issues.push("مدينة الإرسال والوصول يجب أن تكونا مختلفتين");
+  if (data.fromCity && data.fromCity === data.toCity) issues.push("مكان الإرسال والوصول يجب أن يكونا مختلفين");
   if (!(Number.isInteger(data.weightKg) && data.weightKg >= 1 && data.weightKg <= 50)) issues.push("الوزن يجب أن يكون عددًا صحيحًا بين 1 و50 كجم");
   if (!(data.approximateValueSar >= 0 && data.approximateValueSar <= 100000)) issues.push("قيمة الشحنة غير صالحة");
   if (data.contents.length < 15) issues.push("اكتب وصفًا أوضح للمحتويات (15 حرفًا على الأقل)");

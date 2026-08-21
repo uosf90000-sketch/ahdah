@@ -6,8 +6,10 @@ import { redirect } from "next/navigation";
 import { createSession, destroySession, hashPassword, requireUser, verifyPassword } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { DomainValidationError } from "@/lib/domain";
+import { LEGAL_POLICY_VERSION } from "@/lib/legal";
 import { notifyAcceptedTraveler, notifyShipmentSender } from "@/lib/push-service";
 import { clientAddress, enforceRateLimit } from "@/lib/rate-limit";
+import { ensureRuntimeSchema } from "@/lib/runtime-schema";
 import {
   createRating,
   createShipmentFromForm,
@@ -36,6 +38,7 @@ export async function registerAction(formData: FormData) {
     const email = String(formData.get("email") ?? "").trim().toLowerCase();
     const phone = String(formData.get("phone") ?? "").trim();
     const password = String(formData.get("password") ?? "");
+    const acceptedPolicies = formData.get("acceptPolicies") === "yes";
     const ip = await clientAddress();
     enforceRateLimit(`register:ip:${ip}`, 5, 60 * 60 * 1000, "تم تجاوز عدد محاولات إنشاء الحساب. حاول لاحقًا");
 
@@ -43,8 +46,12 @@ export async function registerAction(formData: FormData) {
     if (email.length > 254 || !/^\S+@\S+\.\S+$/.test(email)) throw new DomainValidationError(["البريد الإلكتروني غير صالح"]);
     if (phone && !/^05\d{8}$/.test(phone)) throw new DomainValidationError(["رقم الجوال غير صالح"]);
     if (password.length < 8 || password.length > 128) throw new DomainValidationError(["كلمة المرور يجب أن تكون بين 8 و128 حرفًا"]);
+    if (!acceptedPolicies) throw new DomainValidationError(["يجب الموافقة على الشروط والسياسات قبل إنشاء الحساب"]);
+
+    await ensureRuntimeSchema();
     if (await db.user.findUnique({ where: { email } })) throw new DomainValidationError(["البريد الإلكتروني مسجل مسبقًا"]);
 
+    const acceptedAt = new Date();
     const user = await db.user.create({
       data: {
         name,
@@ -52,6 +59,8 @@ export async function registerAction(formData: FormData) {
         phone: phone || null,
         role: AccountRole.BOTH,
         passwordHash: await hashPassword(password),
+        policyAcceptedAt: acceptedAt,
+        policyVersion: LEGAL_POLICY_VERSION,
       },
     });
     await createSession(user.id);

@@ -73,9 +73,14 @@ function required(value: string, label: string, issues: string[]) {
 
 export function validateShipmentInput(input: FormData | Record<string, unknown>) {
   const issues: string[] = [];
+  const pickupLatRaw = textValue(input, "pickupLat");
+  const pickupLngRaw = textValue(input, "pickupLng");
   const data = {
     fromCity: textValue(input, "fromCity"),
     toCity: textValue(input, "toCity"),
+    pickupLat: Number(pickupLatRaw),
+    pickupLng: Number(pickupLngRaw),
+    pickupNote: textValue(input, "pickupNote"),
     weightKg: numberValue(input, "weightKg"),
     lengthCm: numberValue(input, "lengthCm"),
     widthCm: numberValue(input, "widthCm"),
@@ -94,6 +99,10 @@ export function validateShipmentInput(input: FormData | Record<string, unknown>)
   required(data.requestedDeliveryAt, "موعد التسليم", issues);
   required(data.recipientName, "اسم المستلم", issues);
   required(data.recipientPhone, "رقم المستلم", issues);
+  if (!pickupLatRaw || !pickupLngRaw) issues.push("حدد موقع استلام العُهدة على الخريطة");
+  if (pickupLatRaw && (!(data.pickupLat >= -90) || !(data.pickupLat <= 90))) issues.push("خط عرض موقع الاستلام غير صالح");
+  if (pickupLngRaw && (!(data.pickupLng >= -180) || !(data.pickupLng <= 180))) issues.push("خط طول موقع الاستلام غير صالح");
+  if (data.pickupNote.length > 300) issues.push("ملاحظة موقع الاستلام طويلة جدًا");
   if (data.fromCity && data.fromCity === data.toCity) issues.push("مدينة الإرسال والوصول يجب أن تكونا مختلفتين");
   if (!(data.weightKg > 0 && data.weightKg <= 50)) issues.push("الوزن يجب أن يكون بين 0.1 و50 كجم");
   for (const [value, label] of [[data.lengthCm, "الطول"], [data.widthCm, "العرض"], [data.heightCm, "الارتفاع"]] as const) {

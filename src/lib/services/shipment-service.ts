@@ -37,6 +37,10 @@ export async function createShipment(senderId: string, input: FormData | Record<
   return db.shipment.create({
     data: {
       ...data,
+      // Legacy DB columns remain populated internally; dimensions are no longer collected from users.
+      lengthCm: 1,
+      widthCm: 1,
+      heightCm: 1,
       category: data.category as ShipmentCategory,
       senderId,
       refCode: referenceCode(),
@@ -74,7 +78,6 @@ export async function getMatchesForTrip(tripId: string, travelerId: string) {
       fromCity: trip.fromCity,
       toCity: trip.toCity,
       weightKg: { lte: trip.availableWeightKg },
-      requestedDeliveryAt: { gte: trip.departureAt },
       status: { in: [ShipmentStatus.NEW, ShipmentStatus.RECEIVING_OFFERS] },
     },
     include: { sender: true, photos: { where: { kind: PhotoKind.ORIGINAL } }, offers: { where: { travelerId } } },

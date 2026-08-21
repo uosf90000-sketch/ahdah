@@ -54,7 +54,7 @@ export function TripForm({ minDate }: { minDate: string }) {
         <p className="mt-2 text-sm leading-7 text-slate-500">تقدر تبدأ بطيران ثم تكمل بالسيارة، أو تجعل الرحلة كلها على الطريق. كل مرحلة لها وسيلة نقل مستقلة.</p>
       </div>
 
-      <SaudiPlaceInput id="trip-origin" name="tripOriginDisplay" label="نقطة الانطلاق" value={from} onChange={setFrom} placeholder="مثال: الرياض أو أي قرية/محافظة" />
+      <SaudiPlaceInput id="trip-origin" name="tripOriginDisplay" label="نقطة الانطلاق" value={from} onChange={setFrom} placeholder="اكتب نقطة الانطلاق" />
 
       <div className="space-y-4">
         {legs.map((leg, index) => {
@@ -85,7 +85,7 @@ export function TripForm({ minDate }: { minDate: string }) {
               {leg.mode === "AIR" && (
                 <div className="mt-4 grid-form">
                   <div><label className="label" htmlFor={`airline-${index}`}>شركة الطيران</label><select className="select" id={`airline-${index}`} value={leg.airline} onChange={(event) => updateLeg(index, { airline: event.target.value })} required><option value="" disabled>اختر الشركة</option><option>الخطوط السعودية</option><option>طيران ناس</option><option>طيران أديل</option><option>طيران الرياض</option><option>أخرى</option></select></div>
-                  <div><label className="label" htmlFor={`flight-${index}`}>رقم الرحلة (اختياري)</label><input className="input" id={`flight-${index}`} value={leg.flightNumber} onChange={(event) => updateLeg(index, { flightNumber: event.target.value })} placeholder="SV1042" dir="ltr" /></div>
+                  <div><label className="label" htmlFor={`flight-${index}`}>رقم الرحلة (اختياري)</label><input className="input" id={`flight-${index}`} value={leg.flightNumber} onChange={(event) => updateLeg(index, { flightNumber: event.target.value })} dir="ltr" /></div>
                 </div>
               )}
             </section>

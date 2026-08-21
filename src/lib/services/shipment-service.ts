@@ -176,7 +176,7 @@ export async function issueDeliveryOtp(qrToken: string) {
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
   if (demoMode) {
-    const otp = "246810";
+    const otp = "2468";
     await db.shipment.update({
       where: { id: shipment.id },
       data: { deliveryOtpHash: otpHash(otp), deliveryOtpExpiresAt: expiresAt },
@@ -194,7 +194,7 @@ export async function issueDeliveryOtp(qrToken: string) {
     return null;
   }
 
-  const otp = String(Math.floor(100000 + Math.random() * 900000));
+  const otp = String(Math.floor(1000 + Math.random() * 9000));
   await db.shipment.update({
     where: { id: shipment.id },
     data: { deliveryOtpHash: otpHash(otp), deliveryOtpExpiresAt: expiresAt },
@@ -211,7 +211,7 @@ export async function completeDelivery(qrToken: string, otp: string) {
   }
 
   const cleanOtp = otp.trim();
-  if (!/^\d{4,8}$/.test(cleanOtp)) throw new DomainValidationError(["رمز الاستلام غير صحيح"]);
+  if (!/^\d{4}$/.test(cleanOtp)) throw new DomainValidationError(["رمز الاستلام يجب أن يكون 4 أرقام"]);
 
   if (messagingAdapter.managesOtpVerification && process.env.ENABLE_DEMO_OTP !== "true") {
     const verified = await messagingAdapter.verifyOtp?.({ phone: shipment.recipientPhone, otp: cleanOtp, shipmentRef: shipment.refCode });

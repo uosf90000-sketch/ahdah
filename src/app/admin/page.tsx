@@ -67,7 +67,7 @@ export default async function AdminDashboardPage() {
         <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-semibold text-blue-100">
-              <ShieldCheck aria-hidden="true" size={15} /> إدارة عُهدة
+              <ShieldCheck aria-hidden="true" size={15} /> إدارة عهدتك
             </div>
             <h1 className="mt-5 text-3xl font-bold sm:text-4xl">لوحة التحكم الإدارية</h1>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
@@ -81,7 +81,7 @@ export default async function AdminDashboardPage() {
         </div>
       </section>
 
-      <section className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="مؤشرات عُهدة">
+      <section className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="مؤشرات عهدتك">
         <Metric Icon={Users} label="إجمالي المستخدمين" value={users} />
         <Metric Icon={PackageCheck} label="إجمالي العُهد" value={shipments} />
         <Metric Icon={CheckCircle2} label="تم تسليمها" value={delivered} hint={`${conversion}% من جميع العُهد`} accent />

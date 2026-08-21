@@ -54,11 +54,11 @@ export function ShipmentForm({ minDate }: { minDate: string }) {
       <div className="p-5 sm:p-7">
         <fieldset ref={(node) => { sections.current[0] = node; }} hidden={step !== 0}>
           <legend className="text-xl font-bold">إلى أين ومتى؟</legend>
-          <p className="mt-2 text-sm leading-7 text-slate-500">سنستخدم المسار والموعد لإظهار الطلب للمسافرين المناسبين فقط.</p>
+          <p className="mt-2 text-sm leading-7 text-slate-500">نستخدم المسار والوزن للمطابقة، والموعد يبقى للتنسيق بين الطرفين.</p>
           <div className="mt-7 grid-form">
             <CitySelect name="fromCity" label="مدينة الإرسال" />
             <CitySelect name="toCity" label="مدينة الوصول" />
-            <div className="sm:col-span-2"><label className="label" htmlFor="requestedDeliveryAt">آخر موعد مطلوب للتسليم</label><input className="input" id="requestedDeliveryAt" name="requestedDeliveryAt" type="datetime-local" min={minDate} required /></div>
+            <div className="sm:col-span-2"><label className="label" htmlFor="requestedDeliveryAt">آخر وقت مناسب للاستلام من المرسل</label><input className="input" id="requestedDeliveryAt" name="requestedDeliveryAt" type="datetime-local" min={minDate} required /></div>
           </div>
           <div className="mt-6">
             <PickupLocationPicker
@@ -74,14 +74,9 @@ export function ShipmentForm({ minDate }: { minDate: string }) {
 
         <fieldset ref={(node) => { sections.current[1] = node; }} hidden={step !== 1}>
           <legend className="text-xl font-bold">ما تفاصيل العُهدة؟</legend>
-          <p className="mt-2 text-sm leading-7 text-slate-500">البيانات الدقيقة تختصر وقت الفحص وتساعد المسافر على تسعير النقل.</p>
+          <p className="mt-2 text-sm leading-7 text-slate-500">يكفينا الوزن ووصف واضح للمحتويات حتى يقرر الموصل السعر المناسب.</p>
           <div className="mt-7 space-y-6">
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <NumberField name="weightKg" label="الوزن (كجم)" step="0.1" max="50" />
-              <NumberField name="lengthCm" label="الطول (سم)" max="200" />
-              <NumberField name="widthCm" label="العرض (سم)" max="200" />
-              <NumberField name="heightCm" label="الارتفاع (سم)" max="200" />
-            </div>
+            <div><label className="label flex items-center gap-2" htmlFor="weightKg"><Scale size={18} className="text-palm-600" /> الوزن (كجم)</label><input className="input" id="weightKg" name="weightKg" type="number" min="1" max="50" step="1" defaultValue="10" inputMode="numeric" required /><p className="mt-2 text-xs text-slate-500">أدخل الوزن بالكيلو الصحيح، مثل 10 كجم.</p></div>
             <div><label className="label" htmlFor="category">التصنيف</label><select className="select" id="category" name="category" defaultValue="" required><option value="" disabled>اختر التصنيف</option>{Object.entries(CATEGORY_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>
             <div><label className="label" htmlFor="contents">وصف المحتويات بالتفصيل</label><textarea className="textarea" id="contents" name="contents" minLength={15} maxLength={1500} required placeholder="اذكر كل قطعة، مادتها، وهل تحتوي على سائل أو بطارية..." /><p className="mt-2 text-xs leading-6 text-slate-500">لا تستخدم وصفًا عامًا مثل «أغراض شخصية»؛ اذكر القطع بوضوح.</p></div>
             <div><label className="label" htmlFor="approximateValueSar">القيمة التقريبية (ريال)</label><input className="input" id="approximateValueSar" name="approximateValueSar" type="number" min="0" max="100000" step="1" required inputMode="decimal" /></div>
@@ -121,8 +116,4 @@ export function ShipmentForm({ minDate }: { minDate: string }) {
 
 function CitySelect({ name, label }: { name: string; label: string }) {
   return <div><label className="label" htmlFor={name}>{label}</label><select className="select" id={name} name={name} defaultValue="" required><option value="" disabled>اختر المدينة</option>{SAUDI_CITIES.map((city) => <option key={city} value={city}>{city}</option>)}</select></div>;
-}
-
-function NumberField({ name, label, max, step = "1" }: { name: string; label: string; max: string; step?: string }) {
-  return <div><label className="label" htmlFor={name}>{label}</label><input className="input" id={name} name={name} type="number" min="0.1" max={max} step={step} inputMode="decimal" required /></div>;
 }

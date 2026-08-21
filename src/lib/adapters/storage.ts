@@ -1,4 +1,5 @@
 import { DomainValidationError } from "@/lib/domain";
+import { sanitizeImageBuffer } from "@/lib/image-sanitizer";
 
 export interface StorageAdapter {
   saveImages(files: File[], prefix: string): Promise<string[]>;
@@ -23,15 +24,29 @@ class MockDatabaseStorageAdapter implements StorageAdapter {
       throw new DomainValidationError(["إجمالي حجم الصور يجب ألا يتجاوز 10 ميجابايت"]);
     }
 
-    return Promise.all(
-      files.map(async (file, index) => {
-        if (!allowedTypes.has(file.type)) throw new DomainValidationError([`نوع الصورة ${file.name} غير مدعوم`]);
-        if (file.size > MAX_IMAGE_BYTES) throw new DomainValidationError([`الصورة ${file.name} أكبر من 3 ميجابايت`]);
-        const bytes = Buffer.from(await file.arrayBuffer());
-        if (!hasValidSignature(file.type, bytes)) throw new DomainValidationError([`محتوى الصورة ${file.name} غير صالح`]);
-        return `data:${file.type};name=${encodeURIComponent(`${prefix}-${index + 1}`)};base64,${bytes.toString("base64")}`;
-      }),
-    );
+    const urls: string[] = [];
+    for (const [index, file] of files.entries()) {
+      if (!allowedTypes.has(file.type)) throw new DomainValidationError([`نوع الصورة ${file.name} غير مدعوم`]);
+      if (file.size > MAX_IMAGE_BYTES) throw new DomainValidationError([`الصورة ${file.name} أكبر من 3 ميجابايت`]);
+      const bytes = Buffer.from(await file.arrayBuffer());
+      if (!hasValidSignature(file.type, bytes)) throw new DomainValidationError([`محتوى الصورة ${file.name} غير صالح`]);
+
+      let sanitized: Buffer;
+      try {
+        // Deliberately process sequentially to avoid multiplying libvips memory use
+        // when a request contains the maximum number of large images.
+        sanitized = await sanitizeImageBuffer(file.type, bytes);
+      } catch {
+        throw new DomainValidationError(["تعذر معالجة إحدى الصور. استخدم صورة JPEG أو PNG أو WebP سليمة"]);
+      }
+      if (sanitized.length > MAX_IMAGE_BYTES) {
+        throw new DomainValidationError([`الصورة ${file.name} كبيرة جدًا بعد المعالجة`]);
+      }
+
+      urls.push(`data:${file.type};name=${encodeURIComponent(`${prefix}-${index + 1}`)};base64,${sanitized.toString("base64")}`);
+    }
+
+    return urls;
   }
 }
 

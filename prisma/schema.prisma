@@ -62,27 +62,29 @@ enum PaymentStatus {
 }
 
 model User {
-  id              String          @id @default(cuid())
-  name            String
-  email           String          @unique
-  phone           String?
-  role            AccountRole     @default(BOTH)
-  passwordHash    String
-  googleSubject   String?         @unique
-  emailVerifiedAt DateTime?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  sessions        Session[]
-  pushDevices     PushDevice[]
-  sentShipments   Shipment[]      @relation("ShipmentSender")
-  trips           Trip[]
-  offers          Offer[]
-  photos          ShipmentPhoto[]
-  inspections     Inspection[]
-  statusEvents    StatusEvent[]
-  ratingsGiven    Rating[]        @relation("RatingAuthor")
-  ratingsReceived Rating[]        @relation("RatingTarget")
-  chatMessages    ChatMessage[]   @relation("ChatMessageSender")
+  id               String          @id @default(cuid())
+  name             String
+  email            String          @unique
+  phone            String?
+  role             AccountRole     @default(BOTH)
+  passwordHash     String
+  googleSubject    String?         @unique
+  emailVerifiedAt  DateTime?
+  policyAcceptedAt DateTime?
+  policyVersion    String?         @db.VarChar(32)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  sessions         Session[]
+  pushDevices      PushDevice[]
+  sentShipments    Shipment[]      @relation("ShipmentSender")
+  trips            Trip[]
+  offers           Offer[]
+  photos           ShipmentPhoto[]
+  inspections      Inspection[]
+  statusEvents     StatusEvent[]
+  ratingsGiven     Rating[]        @relation("RatingAuthor")
+  ratingsReceived  Rating[]        @relation("RatingTarget")
+  chatMessages     ChatMessage[]   @relation("ChatMessageSender")
 }
 
 model Session {

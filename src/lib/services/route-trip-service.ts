@@ -1,6 +1,7 @@
 import { OfferStatus, TripStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { DomainValidationError, validateOfferInput, validateTripInput } from "@/lib/domain";
+import { sendPushToUser } from "@/lib/push-service";
 import { encodeItinerary, encodeRoadStops, MULTI_ROUTE_AIRLINE, ROAD_AIRLINE, tripMatchesShipment, type TravelLeg } from "@/lib/trip-route";
 
 function textValue(input: FormData | Record<string, unknown>, key: string) {
@@ -82,7 +83,6 @@ function prepareTripInput(input: FormData | Record<string, unknown>) {
     return validateTripInput(input);
   }
 
-  // Backward compatibility for the original road-trip form/API.
   const travelMode = textValue(input, "travelMode") || "AIR";
   if (!["AIR", "ROAD"].includes(travelMode)) throw new DomainValidationError(["اختر طريقة تنقل صحيحة"]);
   if (travelMode === "ROAD") {
@@ -118,9 +118,15 @@ export async function createRouteAwareOffer(travelerId: string, shipmentId: stri
   if (!trip || !shipment) throw new DomainValidationError(["تعذر العثور على الرحلة أو الشحنة"]);
   if (shipment.senderId === travelerId) throw new DomainValidationError(["لا يمكنك تقديم عرض على شحنتك"]);
   if (!tripMatchesShipment(trip, shipment)) throw new DomainValidationError(["هذه الشحنة لا تقع ضمن مسار رحلتك أو تتجاوز الوزن المتاح"]);
-  return db.offer.upsert({
+  const saved = await db.offer.upsert({
     where: { shipmentId_tripId: { shipmentId, tripId } },
     create: { ...offer, shipmentId, tripId, travelerId },
     update: { ...offer, status: OfferStatus.PENDING },
   });
+  await sendPushToUser(shipment.senderId, {
+    title: "عرض جديد على عهدتك",
+    body: `وصلك عرض بقيمة ${offer.priceSar} ر.س على العُهدة ${shipment.fromCity} ← ${shipment.toCity}`,
+    href: `/shipments/${shipmentId}`,
+  });
+  return saved;
 }

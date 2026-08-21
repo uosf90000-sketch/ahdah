@@ -80,13 +80,41 @@ export function ShipmentForm({ minDate }: { minDate: string }) {
           </div>
 
           <div className="mt-7 border-t border-slate-200 pt-7">
-            <h2 className="text-lg font-bold">المسار والموعد</h2>
-            <p className="mt-1 text-sm leading-7 text-slate-500">نستخدم المسار والوزن للمطابقة، والموعد للتنسيق فقط.</p>
+            <h2 className="text-lg font-bold">المسار وطريقة النقل</h2>
+            <p className="mt-1 text-sm leading-7 text-slate-500">نطابق حسب المسار والوزن وطريقة النقل التي تختارها، والموعد للتنسيق فقط.</p>
             <div className="mt-5 grid-form">
-              <SaudiPlaceInput id="fromCity" name="fromCity" label="مدينة أو محافظة الإرسال" />
-              <SaudiPlaceInput id="toCity" name="toCity" label="مدينة أو محافظة الوصول" />
-              <div className="sm:col-span-2"><label className="label" htmlFor="requestedDeliveryAt">آخر وقت مناسب للاستلام من المرسل</label><input className="input" id="requestedDeliveryAt" name="requestedDeliveryAt" type="datetime-local" min={minDate} required /></div>
+              <SaudiPlaceInput id="fromCity" name="fromCity" label="مكان الإرسال" />
+              <SaudiPlaceInput id="toCity" name="toCity" label="مكان الوصول" />
             </div>
+
+            <div className="mt-6">
+              <p className="label">كيف تقبل نقل العُهدة؟</p>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <label className="cursor-pointer">
+                  <input className="peer sr-only" type="radio" name="transportPreference" value="AIR" required />
+                  <span className="block min-h-24 rounded-2xl border border-slate-200 bg-white p-4 transition peer-checked:border-palm-500 peer-checked:bg-palm-50 peer-checked:ring-2 peer-checked:ring-palm-100">
+                    <strong className="block text-sm">✈️ طيران فقط</strong>
+                    <small className="mt-2 block leading-5 text-slate-500">يظهر الطلب فقط للرحلات الجوية المطابقة.</small>
+                  </span>
+                </label>
+                <label className="cursor-pointer">
+                  <input className="peer sr-only" type="radio" name="transportPreference" value="ROAD" required />
+                  <span className="block min-h-24 rounded-2xl border border-slate-200 bg-white p-4 transition peer-checked:border-palm-500 peer-checked:bg-palm-50 peer-checked:ring-2 peer-checked:ring-palm-100">
+                    <strong className="block text-sm">🚗 على الطريق فقط</strong>
+                    <small className="mt-2 block leading-5 text-slate-500">لا يظهر الطلب لأي رحلة طيران.</small>
+                  </span>
+                </label>
+                <label className="cursor-pointer">
+                  <input className="peer sr-only" type="radio" name="transportPreference" value="ANY" defaultChecked required />
+                  <span className="block min-h-24 rounded-2xl border border-slate-200 bg-white p-4 transition peer-checked:border-palm-500 peer-checked:bg-palm-50 peer-checked:ring-2 peer-checked:ring-palm-100">
+                    <strong className="block text-sm">🔄 كلاهما عادي</strong>
+                    <small className="mt-2 block leading-5 text-slate-500">يظهر للطيران والطريق والمسارات المختلطة.</small>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div className="mt-6"><label className="label" htmlFor="requestedDeliveryAt">آخر وقت مناسب للاستلام من المرسل</label><input className="input" id="requestedDeliveryAt" name="requestedDeliveryAt" type="datetime-local" min={minDate} required /></div>
           </div>
         </fieldset>
 
@@ -117,6 +145,7 @@ export function ShipmentForm({ minDate }: { minDate: string }) {
             <h2 className="flex items-center gap-2 font-bold"><PackageCheck aria-hidden="true" className="text-palm-600" size={20} /> قبل النشر</h2>
             <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
               <li className="flex gap-2"><Check aria-hidden="true" className="mt-0.5 shrink-0 text-emerald-600" size={17} /> تم تحديد موقع الاستلام وموقع التسليم.</li>
+              <li className="flex gap-2"><Check aria-hidden="true" className="mt-0.5 shrink-0 text-emerald-600" size={17} /> تم اختيار طريقة النقل المناسبة.</li>
               <li className="flex gap-2"><Check aria-hidden="true" className="mt-0.5 shrink-0 text-emerald-600" size={17} /> الصور تُظهر جميع المحتويات بوضوح.</li>
               <li className="flex gap-2"><Check aria-hidden="true" className="mt-0.5 shrink-0 text-emerald-600" size={17} /> الوزن والقيمة والوصف صحيحة.</li>
               <li className="flex gap-2"><CircleAlert aria-hidden="true" className="mt-0.5 shrink-0 text-sand-500" size={17} /> لا توجد مواد محظورة أو غير مصرح بها للنقل.</li>

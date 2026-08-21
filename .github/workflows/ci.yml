@@ -2,9 +2,12 @@ name: CI
 
 on:
   push:
-    branches: [main, "feat/**"]
+    branches: [main, "feat/**", "security/**"]
   pull_request:
     branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
   quality:
@@ -14,6 +17,7 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ahdah?schema=public
       SESSION_SECRET: ci-session-secret-that-is-long-enough
       NEXT_PUBLIC_APP_URL: http://localhost:3000
+      ENABLE_DEMO_OTP: "false"
     services:
       postgres:
         image: postgres:16-alpine
@@ -33,7 +37,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install
+          cache: npm
+      - run: npm ci
+      - run: npm audit --omit=dev --audit-level=high
       - run: npx prisma generate
       - run: npx prisma db push
       - run: npm run lint

@@ -5,9 +5,9 @@ import { Header } from "@/components/header";
 import { MobileNav } from "@/components/mobile-nav";
 
 export const metadata: Metadata = {
-  title: { default: "عُهدة | سفر موثوق وتسليم مؤكّد", template: "%s | عُهدة" },
+  title: { default: "عهدتك | سفر موثوق وتسليم مؤكّد", template: "%s | عهدتك" },
   description: "منصة تربط المسافرين ذوي الوزن المتاح بمرسلي العُهد والطرود بين المدن.",
-  applicationName: "عُهدة",
+  applicationName: "عهدتك",
 };
 
 export const viewport: Viewport = { themeColor: "#0b1f33", width: "device-width", initialScale: 1 };

@@ -8,12 +8,12 @@ import { db } from "@/lib/db";
 import { DomainValidationError } from "@/lib/domain";
 import { clientAddress, enforceRateLimit } from "@/lib/rate-limit";
 import {
-  advanceShipment,
   createRating,
   createShipmentFromForm,
   inspectShipment,
 } from "@/lib/services/shipment-service";
 import { createRouteAwareOffer, createRouteAwareTrip } from "@/lib/services/route-trip-service";
+import { advanceShipmentSafely } from "@/lib/services/secure-transition-service";
 import {
   acceptOfferSafely,
   completeDeliverySafely,
@@ -167,7 +167,7 @@ export async function advanceShipmentAction(formData: FormData) {
   try {
     const status = String(formData.get("nextStatus")) as "WITH_TRAVELER" | "ARRIVED";
     if (!["WITH_TRAVELER", "ARRIVED"].includes(status)) throw new DomainValidationError(["الحالة المطلوبة غير صالحة"]);
-    await advanceShipment(user.id, shipmentId, status);
+    await advanceShipmentSafely(user.id, shipmentId, status);
     revalidatePath(`/shipments/${shipmentId}`);
     destination += `?success=${encodeURIComponent("تم تحديث حالة العُهدة")}`;
   } catch (error) {

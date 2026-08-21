@@ -63,7 +63,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-red-50 text-red-600"><Trash2 /></span>
             <div>
               <h2 className="text-xl font-black text-red-700">حذف الحساب نهائيًا</h2>
-              <p className="muted mt-1">يحذف الحساب والشحنات والرحلات والرسائل والصور والتقييمات والبيانات المرتبطة بك من قاعدة بيانات عهدتك، باستثناء أي بيانات يفرض النظام الاحتفاظ بها.</p>
+              <p className="muted mt-1">يحذف الحساب والشحنات والرحلات والرسائل والصور والتقييمات والبيانات المرتبطة بك من قاعدة بيانات عهدتك. إذا كانت لديك عُهدة نشطة، يجب إكمالها أو إلغاؤها أولًا حتى لا ينقطع تسليم جارٍ.</p>
             </div>
           </div>
           <form action={deleteAccountAction} className="space-y-4">

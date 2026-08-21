@@ -3,7 +3,7 @@
 import { ArrowDown, ArrowUp, Car, Plane, Plus, Scale, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { createTripAction } from "@/app/actions";
-import { SAUDI_CITIES } from "@/lib/domain";
+import { SaudiPlaceInput } from "@/components/saudi-place-input";
 import { SubmitButton } from "@/components/submit-button";
 
 type TravelMode = "AIR" | "ROAD";
@@ -59,25 +59,34 @@ export function TripForm({ minDate }: { minDate: string }) {
       <div className="border-t border-ink-100 pt-7">
         <span className="section-kicker">مسار الرحلة</span>
         <h2 className="mt-2 text-xl font-bold text-ink-950">من أين وإلى أين؟</h2>
+        <p className="mt-2 text-sm leading-7 text-slate-500">اختر من الاقتراحات أو اكتب أي مدينة أو محافظة سعودية بنفسك.</p>
       </div>
 
       <div className="grid-form">
-        <CitySelect name="fromCity" label="مدينة الانطلاق" value={fromCity} onChange={setFromCity} />
-        <CitySelect name="toCity" label="الوجهة النهائية" value={toCity} onChange={setToCity} />
+        <SaudiPlaceInput id="fromCity" name="fromCity" label="مدينة أو محافظة الانطلاق" value={fromCity} onChange={setFromCity} />
+        <SaudiPlaceInput id="toCity" name="toCity" label="الوجهة النهائية" value={toCity} onChange={setToCity} />
       </div>
 
       {mode === "ROAD" && (
         <section className="rounded-3xl border border-palm-100 bg-palm-50/50 p-4 sm:p-5">
           <div className="flex items-start justify-between gap-4">
-            <div><h3 className="font-black text-ink-950">محطات الطريق</h3><p className="mt-1 text-xs leading-6 text-slate-600">أضف المدن بالترتيب الذي ستمر به. الطلب يطابق إذا كانت مدينة الاستلام قبل مدينة التسليم في مسارك.</p></div>
+            <div><h3 className="font-black text-ink-950">محطات الطريق</h3><p className="mt-1 text-xs leading-6 text-slate-600">أضف أي مدينة أو محافظة بالترتيب الذي ستمر به. الطلب يطابق إذا كانت نقطة الاستلام قبل نقطة التسليم في مسارك.</p></div>
             <button type="button" onClick={addStop} className="btn-secondary shrink-0"><Plus size={16} /> إضافة محطة</button>
           </div>
 
           <div className="mt-4 space-y-3">
             {stops.map((stop, index) => (
               <div key={index} className="flex items-end gap-2 rounded-2xl bg-white p-3">
-                <div className="min-w-0 flex-1"><label className="label" htmlFor={`routeStop-${index}`}>المحطة {index + 1}</label><select className="select" id={`routeStop-${index}`} name="routeStop" value={stop} onChange={(event) => updateStop(index, event.target.value)} required><option value="" disabled>اختر المدينة</option>{SAUDI_CITIES.map((city) => <option key={city} value={city}>{city}</option>)}</select></div>
-                <div className="flex gap-1 pb-1">
+                <SaudiPlaceInput
+                  className="min-w-0 flex-1"
+                  id={`routeStop-${index}`}
+                  name="routeStop"
+                  label={`المحطة ${index + 1}`}
+                  value={stop}
+                  onChange={(value) => updateStop(index, value)}
+                  placeholder="اكتب اسم المحطة"
+                />
+                <div className="flex gap-1 pb-7">
                   <button type="button" onClick={() => moveStop(index, -1)} disabled={index === 0} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 text-slate-600 disabled:opacity-30" aria-label="تحريك المحطة للأعلى"><ArrowUp size={16} /></button>
                   <button type="button" onClick={() => moveStop(index, 1)} disabled={index === stops.length - 1} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 text-slate-600 disabled:opacity-30" aria-label="تحريك المحطة للأسفل"><ArrowDown size={16} /></button>
                   <button type="button" onClick={() => removeStop(index)} className="grid h-10 w-10 place-items-center rounded-xl border border-red-100 text-red-600" aria-label="حذف المحطة"><Trash2 size={16} /></button>
@@ -108,8 +117,4 @@ export function TripForm({ minDate }: { minDate: string }) {
       <SubmitButton className="btn-primary w-full" pendingText="جاري البحث عن مطابقات...">{mode === "AIR" ? <Plane size={18} /> : <Car size={18} />} إضافة الرحلة وعرض المطابقات</SubmitButton>
     </form>
   );
-}
-
-function CitySelect({ name, label, value, onChange }: { name: string; label: string; value: string; onChange: (value: string) => void }) {
-  return <div><label className="label" htmlFor={name}>{label}</label><select className="select" id={name} name={name} value={value} onChange={(event) => onChange(event.target.value)} required><option value="" disabled>اختر المدينة</option>{SAUDI_CITIES.map((city) => <option key={city} value={city}>{city}</option>)}</select></div>;
 }

@@ -1,4 +1,4 @@
-import { BadgeCheck, CalendarClock, Car, LockKeyhole, MapPin, Plane } from "lucide-react";
+import { BadgeCheck, CalendarClock, Car, LockKeyhole, MapPin, Plane, Route } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { MessageBanner } from "@/components/message-banner";
 import { TripForm } from "@/components/trip-form";
@@ -15,9 +15,9 @@ export default async function NewTripPage({ searchParams }: { searchParams: Prom
   return (
     <div className="page-wrap section-space">
       <div className="mb-8 max-w-2xl">
-        <span className="eyebrow mb-4"><Plane size={15} /> للموصل</span>
-        <h1 className="title">أضف رحلتك واعرف العُهد المناسبة</h1>
-        <p className="muted mt-3">سافر بالطائرة أو على الطريق. في الرحلات البرية أضف كل المدن التي ستمر بها وسنطابق الطلبات الواقعة على مسارك.</p>
+        <span className="eyebrow mb-4"><Route size={15} /> للموصل</span>
+        <h1 className="title">أضف مسارك كاملًا مهما تغيّرت وسيلة السفر</h1>
+        <p className="muted mt-3">مثال: الرياض ✈️ جدة ثم جدة 🚗 رابغ 🚗 ينبع. نطابق أي عُهدة تقع بين نقطتين بالترتيب الصحيح داخل مسارك.</p>
       </div>
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_21rem]">
@@ -27,14 +27,14 @@ export default async function NewTripPage({ searchParams }: { searchParams: Prom
         </div>
 
         <aside className="glass-panel lg:sticky lg:top-28" aria-label="معلومات للموصل">
-          <span className="eyebrow mb-5"><BadgeCheck size={15} /> رحلة مرنة</span>
+          <span className="eyebrow mb-5"><BadgeCheck size={15} /> مسار مرن</span>
           <h2 className="text-xl font-bold text-ink-950">كيف تعمل المطابقة؟</h2>
           <div className="mt-6 space-y-5">
-            <Info icon={Plane} title="طيران" text="نطابق مدينة الانطلاق والوجهة والوزن المتاح." />
-            <Info icon={Car} title="على الطريق" text="أضف محطاتك بالترتيب، ونظهر لك أي عُهدة تبدأ وتنتهي داخل مسارك بالاتجاه الصحيح." />
-            <Info icon={MapPin} title="المحطات مهمة" text="مثال: أبها ← جدة ← ينبع ← تبوك يسمح بعُهدة من جدة إلى تبوك." />
-            <Info icon={CalendarClock} title="أنت تحدد السعر" text="راجع الطلب والوزن ثم قدم عرضك للمرسل." />
-            <Info icon={LockKeyhole} title="فحص قبل الحمل" text="بعد قبول عرضك يظهر لك موقع الاستلام والتسليم الدقيق." />
+            <Info icon={Plane} title="طيران ثم طريق" text="تقدر تجعل مرحلة طيران والمرحلة التالية بالسيارة داخل نفس الرحلة." />
+            <Info icon={Car} title="محطات غير محدودة بقائمة" text="اكتب أي مدينة أو محافظة أو قرية أو مركز أو هجرة تمر بها." />
+            <Info icon={MapPin} title="الترتيب هو الأساس" text="إذا كان المسار الرياض ← جدة ← رابغ ← ينبع، تظهر طلبات الرياض إلى ينبع وجدة إلى ينبع وغيرها." />
+            <Info icon={CalendarClock} title="أنت تحدد السعر" text="راجع الطلب والوزن ثم قدم عرضك مباشرة من صفحة رحلتك." />
+            <Info icon={LockKeyhole} title="المواقع الدقيقة محمية" text="بعد قبول عرضك يظهر لك موقع الاستلام والتسليم الدقيق." />
           </div>
         </aside>
       </div>

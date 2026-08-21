@@ -124,6 +124,8 @@ model Shipment {
   qrToken               String           @unique
   deliveryOtpHash       String?
   deliveryOtpExpiresAt  DateTime?
+  deliveryOtpAttempts   Int              @default(0)
+  deliveryOtpLastSentAt DateTime?
   acceptedOfferId       String?          @unique
   acceptedOffer         Offer?           @relation("AcceptedOffer", fields: [acceptedOfferId], references: [id], onDelete: SetNull)
   photos                ShipmentPhoto[]

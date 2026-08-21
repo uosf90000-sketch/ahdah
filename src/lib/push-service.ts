@@ -34,7 +34,7 @@ function apnsConfig() {
 }
 
 function base64url(value: string | Buffer) {
-  return Buffer.from(value).toString("base64url");
+  return typeof value === "string" ? Buffer.from(value).toString("base64url") : value.toString("base64url");
 }
 
 async function fcmAccessToken() {

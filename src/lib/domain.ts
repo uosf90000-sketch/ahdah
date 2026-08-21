@@ -79,13 +79,20 @@ function required(value: string, label: string, issues: string[]) {
   if (!value) issues.push(`${label} مطلوب`);
 }
 
-function validateCoordinates(rawLat: string, rawLng: string, lat: number, lng: number, label: string, issues: string[]) {
+function optionalCoordinate(raw: string) {
+  if (!raw) return null;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : Number.NaN;
+}
+
+function validateOptionalCoordinates(rawLat: string, rawLng: string, lat: number | null, lng: number | null, label: string, issues: string[]) {
+  if (!rawLat && !rawLng) return;
   if (!rawLat || !rawLng) {
-    issues.push(`حدد ${label} على الخريطة`);
+    issues.push(`إحداثيات ${label} غير مكتملة`);
     return;
   }
-  if (!(lat >= -90 && lat <= 90)) issues.push(`خط عرض ${label} غير صالح`);
-  if (!(lng >= -180 && lng <= 180)) issues.push(`خط طول ${label} غير صالح`);
+  if (lat === null || !(lat >= -90 && lat <= 90)) issues.push(`خط عرض ${label} غير صالح`);
+  if (lng === null || !(lng >= -180 && lng <= 180)) issues.push(`خط طول ${label} غير صالح`);
 }
 
 export function validateShipmentInput(input: FormData | Record<string, unknown>) {
@@ -97,11 +104,11 @@ export function validateShipmentInput(input: FormData | Record<string, unknown>)
   const data = {
     fromCity: textValue(input, "fromCity"),
     toCity: textValue(input, "toCity"),
-    pickupLat: Number(pickupLatRaw),
-    pickupLng: Number(pickupLngRaw),
+    pickupLat: optionalCoordinate(pickupLatRaw),
+    pickupLng: optionalCoordinate(pickupLngRaw),
     pickupNote: textValue(input, "pickupNote"),
-    deliveryLat: Number(deliveryLatRaw),
-    deliveryLng: Number(deliveryLngRaw),
+    deliveryLat: optionalCoordinate(deliveryLatRaw),
+    deliveryLng: optionalCoordinate(deliveryLngRaw),
     deliveryNote: textValue(input, "deliveryNote"),
     transportPreference: (textValue(input, "transportPreference") || "ANY") as TransportPreference,
     weightKg: numberValue(input, "weightKg"),
@@ -119,8 +126,8 @@ export function validateShipmentInput(input: FormData | Record<string, unknown>)
   required(data.requestedDeliveryAt, "آخر وقت لاستلام العُهدة من المرسل", issues);
   required(data.recipientName, "اسم المستلم", issues);
   required(data.recipientPhone, "رقم المستلم", issues);
-  validateCoordinates(pickupLatRaw, pickupLngRaw, data.pickupLat, data.pickupLng, "موقع الاستلام", issues);
-  validateCoordinates(deliveryLatRaw, deliveryLngRaw, data.deliveryLat, data.deliveryLng, "موقع التسليم", issues);
+  validateOptionalCoordinates(pickupLatRaw, pickupLngRaw, data.pickupLat, data.pickupLng, "موقع الاستلام", issues);
+  validateOptionalCoordinates(deliveryLatRaw, deliveryLngRaw, data.deliveryLat, data.deliveryLng, "موقع التسليم", issues);
   if (!Object.hasOwn(TRANSPORT_PREFERENCE_LABELS, data.transportPreference)) issues.push("اختر طريقة نقل صحيحة");
   if (data.pickupNote.length > 300) issues.push("ملاحظة موقع الاستلام طويلة جدًا");
   if (data.deliveryNote.length > 300) issues.push("ملاحظة موقع التسليم طويلة جدًا");

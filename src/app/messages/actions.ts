@@ -4,12 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { DomainValidationError } from "@/lib/domain";
-import { sendChatMessage } from "@/lib/services/chat-service";
+import { sendChatMessage, updateChatLocation } from "@/lib/services/chat-service";
 
 function messageFrom(error: unknown) {
   if (error instanceof DomainValidationError) return error.issues.join("، ");
   console.error(error);
-  return "تعذر إرسال الرسالة الآن";
+  return "تعذر إكمال العملية الآن";
 }
 
 export async function sendChatMessageAction(formData: FormData) {
@@ -22,5 +22,30 @@ export async function sendChatMessageAction(formData: FormData) {
   } catch (error) {
     destination += `?error=${encodeURIComponent(messageFrom(error))}`;
   }
+  redirect(destination);
+}
+
+export async function updateChatLocationAction(formData: FormData) {
+  const user = await requireUser();
+  const shipmentId = String(formData.get("shipmentId") ?? "").trim();
+  const kind = String(formData.get("kind") ?? "");
+  let destination = `/messages/${shipmentId}`;
+
+  try {
+    if (kind !== "pickup" && kind !== "delivery") throw new DomainValidationError(["نوع الموقع غير صالح"]);
+    const prefix = kind === "pickup" ? "pickup" : "delivery";
+    const rawLat = String(formData.get(`${prefix}Lat`) ?? "").trim();
+    const rawLng = String(formData.get(`${prefix}Lng`) ?? "").trim();
+    if (!rawLat || !rawLng) throw new DomainValidationError(["حدد الموقع على الخريطة قبل الحفظ"]);
+    const lat = Number(rawLat);
+    const lng = Number(rawLng);
+    const note = String(formData.get(`${prefix}Note`) ?? "");
+    await updateChatLocation(user.id, shipmentId, kind, lat, lng, note);
+    revalidatePath(destination);
+    destination += `?success=${encodeURIComponent(kind === "pickup" ? "تم حفظ موقع الاستلام" : "تم حفظ موقع التسليم")}`;
+  } catch (error) {
+    destination += `?error=${encodeURIComponent(messageFrom(error))}`;
+  }
+
   redirect(destination);
 }

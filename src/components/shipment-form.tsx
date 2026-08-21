@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Camera, Check, CircleAlert, MapPin, PackageCheck
 import { useRef, useState } from "react";
 import { createShipmentAction } from "@/app/actions";
 import { CATEGORY_LABELS, SAUDI_CITIES } from "@/lib/domain";
+import { PickupLocationPicker, type PickupCoordinates } from "@/components/pickup-location-picker";
 import { SubmitButton } from "@/components/submit-button";
 
 const steps = [
@@ -14,6 +15,8 @@ const steps = [
 
 export function ShipmentForm({ minDate }: { minDate: string }) {
   const [step, setStep] = useState(0);
+  const [pickup, setPickup] = useState<PickupCoordinates | null>(null);
+  const [locationError, setLocationError] = useState(false);
   const sections = useRef<Array<HTMLFieldSetElement | null>>([]);
 
   function goNext() {
@@ -23,6 +26,10 @@ export function ShipmentForm({ minDate }: { minDate: string }) {
     const invalid = controls.find((control) => !control.checkValidity());
     if (invalid) {
       invalid.reportValidity();
+      return;
+    }
+    if (step === 0 && !pickup) {
+      setLocationError(true);
       return;
     }
     setStep((current) => Math.min(current + 1, steps.length - 1));
@@ -52,6 +59,16 @@ export function ShipmentForm({ minDate }: { minDate: string }) {
             <CitySelect name="fromCity" label="مدينة الإرسال" />
             <CitySelect name="toCity" label="مدينة الوصول" />
             <div className="sm:col-span-2"><label className="label" htmlFor="requestedDeliveryAt">آخر موعد مطلوب للتسليم</label><input className="input" id="requestedDeliveryAt" name="requestedDeliveryAt" type="datetime-local" min={minDate} required /></div>
+          </div>
+          <div className="mt-6">
+            <PickupLocationPicker
+              value={pickup}
+              showError={locationError}
+              onChange={(next) => {
+                setPickup(next);
+                setLocationError(false);
+              }}
+            />
           </div>
         </fieldset>
 

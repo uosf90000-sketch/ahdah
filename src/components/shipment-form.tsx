@@ -3,8 +3,9 @@
 import { ArrowLeft, ArrowRight, Camera, Check, CircleAlert, MapPin, PackageCheck, Scale, UserRound } from "lucide-react";
 import { useRef, useState } from "react";
 import { createShipmentAction } from "@/app/actions";
-import { CATEGORY_LABELS, SAUDI_CITIES } from "@/lib/domain";
+import { CATEGORY_LABELS } from "@/lib/domain";
 import { PickupLocationPicker, type LocationCoordinates } from "@/components/pickup-location-picker";
+import { SaudiPlaceInput } from "@/components/saudi-place-input";
 import { SubmitButton } from "@/components/submit-button";
 
 const steps = [
@@ -82,8 +83,8 @@ export function ShipmentForm({ minDate }: { minDate: string }) {
             <h2 className="text-lg font-bold">المسار والموعد</h2>
             <p className="mt-1 text-sm leading-7 text-slate-500">نستخدم المسار والوزن للمطابقة، والموعد للتنسيق فقط.</p>
             <div className="mt-5 grid-form">
-              <CitySelect name="fromCity" label="مدينة الإرسال" />
-              <CitySelect name="toCity" label="مدينة الوصول" />
+              <SaudiPlaceInput id="fromCity" name="fromCity" label="مدينة أو محافظة الإرسال" />
+              <SaudiPlaceInput id="toCity" name="toCity" label="مدينة أو محافظة الوصول" />
               <div className="sm:col-span-2"><label className="label" htmlFor="requestedDeliveryAt">آخر وقت مناسب للاستلام من المرسل</label><input className="input" id="requestedDeliveryAt" name="requestedDeliveryAt" type="datetime-local" min={minDate} required /></div>
             </div>
           </div>
@@ -118,7 +119,7 @@ export function ShipmentForm({ minDate }: { minDate: string }) {
               <li className="flex gap-2"><Check aria-hidden="true" className="mt-0.5 shrink-0 text-emerald-600" size={17} /> تم تحديد موقع الاستلام وموقع التسليم.</li>
               <li className="flex gap-2"><Check aria-hidden="true" className="mt-0.5 shrink-0 text-emerald-600" size={17} /> الصور تُظهر جميع المحتويات بوضوح.</li>
               <li className="flex gap-2"><Check aria-hidden="true" className="mt-0.5 shrink-0 text-emerald-600" size={17} /> الوزن والقيمة والوصف صحيحة.</li>
-              <li className="flex gap-2"><CircleAlert aria-hidden="true" className="mt-0.5 shrink-0 text-sand-500" size={17} /> لا توجد مواد محظورة أو غير مصرح بها للطيران.</li>
+              <li className="flex gap-2"><CircleAlert aria-hidden="true" className="mt-0.5 shrink-0 text-sand-500" size={17} /> لا توجد مواد محظورة أو غير مصرح بها للنقل.</li>
             </ul>
           </div>
         </fieldset>
@@ -130,8 +131,4 @@ export function ShipmentForm({ minDate }: { minDate: string }) {
       </div>
     </form>
   );
-}
-
-function CitySelect({ name, label }: { name: string; label: string }) {
-  return <div><label className="label" htmlFor={name}>{label}</label><select className="select" id={name} name={name} defaultValue="" required><option value="" disabled>اختر المدينة</option>{SAUDI_CITIES.map((city) => <option key={city} value={city}>{city}</option>)}</select></div>;
 }

@@ -1,26 +1,34 @@
 import { db } from "@/lib/db";
+import { ensureRuntimeSchema } from "@/lib/runtime-schema";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  let database: "connected" | "unavailable" = "unavailable";
-
   try {
+    await ensureRuntimeSchema();
     await db.$queryRaw`SELECT 1`;
-    database = "connected";
-  } catch {
-    // Railway's deployment healthcheck should confirm the web process is alive.
-    // Database migrations run in preDeployCommand; DB state is reported here
-    // without making a transient database issue fail the whole deployment.
-  }
 
-  return Response.json(
-    {
-      status: "ok",
-      service: "ahdatuk",
-      database,
-      timestamp: new Date().toISOString(),
-    },
-    { status: 200, headers: { "cache-control": "no-store" } },
-  );
+    return Response.json(
+      {
+        status: "ok",
+        service: "ahdatuk",
+        database: "connected",
+        schema: "ready",
+        timestamp: new Date().toISOString(),
+      },
+      { status: 200, headers: { "cache-control": "no-store" } },
+    );
+  } catch (error) {
+    console.error("Runtime schema healthcheck failed", error);
+    return Response.json(
+      {
+        status: "degraded",
+        service: "ahdatuk",
+        database: "unavailable",
+        schema: "not-ready",
+        timestamp: new Date().toISOString(),
+      },
+      { status: 503, headers: { "cache-control": "no-store" } },
+    );
+  }
 }

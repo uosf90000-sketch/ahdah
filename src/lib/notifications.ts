@@ -121,8 +121,8 @@ export async function notifyDeliveryReady(shipmentId: string, recipientId: strin
   await sendNotification({
     type: "DELIVERY_READY",
     userId: recipientId,
-    title: "العُهدة جاهزة للتسليم",
-    body: "الموصل وصل إلى موقع التسليم",
+    title: "العهدة وصلت",
+    body: "",
     data: { shipmentId },
   });
 }
@@ -131,8 +131,8 @@ export async function notifyDeliveryCompleted(shipmentId: string, senderId: stri
   await sendNotification({
     type: "DELIVERY_COMPLETED",
     userId: senderId,
-    title: "تم تسليم العُهدة بنجاح",
-    body: "وصلت العُهدة إلى المستلم",
+    title: "تم استلام العهدة",
+    body: "",
     data: { shipmentId },
   });
 }

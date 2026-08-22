@@ -14,14 +14,20 @@ export function initSentry() {
         }),
       ],
 
-      replaySessionSampleRate: 0.1,
-      replayOnErrorSampleRate: 1.0,
+      replaysSessionSampleRate: 0.1,
+      replaysOnErrorSampleRate: 1.0,
 
-      beforeSend(event: Sentry.ErrorEvent | Sentry.TransactionEvent) {
-        if ("exception" in event && event.exception) {
-          const error = event.exception.values?.[0];
-          if (error?.type === "RequestBodyTooLargeError") {
-            return null;
+      beforeSend(event: unknown) {
+        if (typeof event === "object" && event !== null && "exception" in event) {
+          const exc = (event as Record<string, unknown>).exception;
+          if (exc && typeof exc === "object" && "values" in exc) {
+            const values = (exc as Record<string, unknown>).values;
+            if (Array.isArray(values) && values[0]) {
+              const error = values[0] as Record<string, unknown>;
+              if (error.type === "RequestBodyTooLargeError") {
+                return null;
+              }
+            }
           }
         }
         return event;

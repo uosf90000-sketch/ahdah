@@ -23,17 +23,19 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
   try {
     const user = await db.user.findUnique({
       where: { id: payload.userId },
-      select: { id: true, name: true, pushTokens: true },
+      include: { pushDevices: true },
     });
 
-    if (!user || !user.pushTokens || user.pushTokens.length === 0) {
+    if (!user || !user.pushDevices || user.pushDevices.length === 0) {
       return;
     }
 
-    const validTokens = user.pushTokens.filter((token) => typeof token === "string" && token.length > 0);
+    const validTokens = user.pushDevices
+      .map((device) => device.token)
+      .filter((token): token is string => typeof token === "string" && token.length > 0);
     if (validTokens.length === 0) return;
 
-    const result = await sendMulticastNotification(validTokens as string[], payload.title, payload.body, {
+    const result = await sendMulticastNotification(validTokens, payload.title, payload.body, {
       type: payload.type,
       ...payload.data,
     });

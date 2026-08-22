@@ -17,8 +17,8 @@ export function initSentry() {
       replaySessionSampleRate: 0.1,
       replayOnErrorSampleRate: 1.0,
 
-      beforeSend(event) {
-        if (event.exception) {
+      beforeSend(event: Sentry.ErrorEvent | Sentry.TransactionEvent) {
+        if ("exception" in event && event.exception) {
           const error = event.exception.values?.[0];
           if (error?.type === "RequestBodyTooLargeError") {
             return null;

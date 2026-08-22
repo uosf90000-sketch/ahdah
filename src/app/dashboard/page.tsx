@@ -14,12 +14,17 @@ export default async function DashboardPage() {
   const now = new Date();
   const [sent, trips, carrying, receivedRatings] = await Promise.all([
     db.shipment.findMany({ where: { senderId: user.id }, include: { offers: true }, orderBy: { createdAt: "desc" }, take: 5 }),
-    db.trip.findMany({ where: { travelerId: user.id }, include: { offers: true }, orderBy: { departureAt: "asc" }, take: 8 }),
+    db.trip.findMany({
+      where: { travelerId: user.id, status: "OPEN", departureAt: { gt: now } },
+      include: { offers: true },
+      orderBy: { departureAt: "asc" },
+      take: 8,
+    }),
     db.shipment.findMany({ where: { acceptedOffer: { travelerId: user.id }, status: { notIn: ["DELIVERED", "CANCELLED"] } }, include: { acceptedOffer: true }, orderBy: { updatedAt: "desc" } }),
     db.rating.aggregate({ where: { targetId: user.id }, _avg: { score: true }, _count: true }),
   ]);
 
-  const openTrips = trips.filter((trip) => trip.status === "OPEN" && trip.departureAt > now);
+  const openTrips = trips;
   const matchRows = await Promise.all(
     openTrips.map(async (trip) => ({ trip, matches: await getTravelerMatchesForTrip(trip.id, user.id) })),
   );
@@ -39,7 +44,7 @@ export default async function DashboardPage() {
           <div>
             <p className="text-sm font-semibold text-blue-200">مرحبًا، {user.name.split(" ")[0]}</p>
             <h1 className="mt-2 text-3xl font-bold sm:text-4xl">ماذا تريد أن تنجز اليوم؟</h1>
-            <p className="mt-3 max-w-xl text-sm leading-7 text-slate-300">أرسل عُهدة جديدة أو سجّل رحلتك، وسنتولى مطابقة المسار والوزن.</p>
+            <p className="mt-3 max-w-xl text-sm leading-7 text-slate-300">أرسل عُهدة جديدة أو سجّل رحلتك، ونطابق المسار والوزن وطريقة النقل.</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:w-[29rem]">
             <Link href="/shipments/new" className="group flex min-h-24 items-center gap-4 rounded-3xl bg-white p-4 text-ink transition hover:-translate-y-0.5">
@@ -58,7 +63,7 @@ export default async function DashboardPage() {
 
       <section className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="ملخص الحساب">
         <Metric label="طلباتي المرسلة" value={sent.length} Icon={Boxes} />
-        <Metric label="طلبات متاحة للتوصيل" value={availableToCarry.length} Icon={Sparkles} accent />
+        <Metric label="عُهد متاحة للتوصيل" value={availableToCarry.length} Icon={Sparkles} accent />
         <Metric label="عُهد أحملها" value={carrying.length} Icon={Scale} />
         <Metric label="تقييمي" value={receivedRatings._count ? `${receivedRatings._avg.score?.toFixed(1)} / 5` : "جديد"} Icon={Star} />
       </section>
@@ -76,8 +81,8 @@ export default async function DashboardPage() {
         <div className="mb-5 flex items-center justify-between gap-4">
           <div>
             <p className="eyebrow mb-2">وضع الموصل</p>
-            <h2 className="text-xl font-bold">طلبات متاحة للتوصيل</h2>
-            <p className="muted mt-1">هذه طلبات مستخدمين آخرين فقط، ومطابقة لرحلاتك ووزنك المتاح.</p>
+            <h2 className="text-xl font-bold">عُهد متاحة للتوصيل</h2>
+            <p className="muted mt-1">هذه عُهد مستخدمين آخرين فقط، ومطابقة لمسار رحلتك ووزنك وطريقة النقل.</p>
           </div>
           <Link href="/matches" className="inline-flex min-h-11 items-center gap-1 rounded-xl px-3 text-sm font-semibold text-palm-700 hover:bg-palm-50">كل المطابقات <ArrowLeft aria-hidden="true" size={15} /></Link>
         </div>
@@ -95,7 +100,7 @@ export default async function DashboardPage() {
                 </div>
                 <p className="mt-3 line-clamp-2 text-sm leading-7 text-slate-600">{shipment.contents}</p>
                 <div className="mt-4 flex items-center justify-between border-t border-palm-100 pt-3">
-                  <span className="text-xs text-slate-500">وقت المرسل {formatDate(shipment.requestedDeliveryAt)}</span>
+                  <span className="text-xs text-slate-500">وقت المرسل للتنسيق: {formatDate(shipment.requestedDeliveryAt)}</span>
                   <Link href={`/trips/${trip.id}#shipment-${shipment.id}`} className="inline-flex min-h-11 items-center gap-1 rounded-xl bg-palm-600 px-4 text-sm font-bold text-white">عرض وتقديم سعر <ArrowLeft size={15} /></Link>
                 </div>
               </article>
@@ -104,22 +109,22 @@ export default async function DashboardPage() {
         ) : openTrips.length ? (
           <div className="rounded-2xl bg-slate-50 p-7 text-center">
             <PackageSearch className="mx-auto mb-3 text-palm-600" size={38} />
-            <p className="font-bold">لا توجد طلبات من مستخدمين آخرين مطابقة الآن</p>
-            <p className="muted mt-2">طلب الشحن الذي أنشأته أنت لا يظهر هنا. ستظهر طلبات الحسابات الأخرى فور مطابقتها لرحلتك.</p>
+            <p className="font-bold">لا توجد عُهد من مستخدمين آخرين مطابقة الآن</p>
+            <p className="muted mt-2">عُهدتك التي أنشأتها أنت لا تظهر هنا. ستظهر عُهد الحسابات الأخرى فور مطابقتها لمسار رحلتك ووزنك وطريقة النقل.</p>
           </div>
         ) : (
-          <Empty text="أضف رحلة ووزنك المتاح لنظهر لك طلبات المستخدمين الآخرين" href="/trips/new" action="إضافة رحلة" />
+          <Empty text="أضف رحلة ووزنك المتاح لنظهر لك عُهد المستخدمين الآخرين" href="/trips/new" action="إضافة رحلة" />
         )}
       </section>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1.15fr_.85fr]">
         <section className="card">
           <SectionHeading title="طلباتي المرسلة" href="/shipments/new" action="طلب جديد" />
-          <p className="muted -mt-3 mb-4 text-xs">هذه الطلبات التي أنشأتها أنت كمرسل، وليست طلبات متاحة لتقديم سعر عليها.</p>
+          <p className="muted -mt-3 mb-4 text-xs">هذه العُهد التي أنشأتها أنت كمرسل، وليست عُهدًا متاحة لتقديم سعر عليها.</p>
           <div className="space-y-3">
             {sent.length ? sent.map((shipment) => (
               <Link href={`/shipments/${shipment.id}`} key={shipment.id} className="group block rounded-2xl border border-slate-200 p-4 transition hover:border-palm-500 hover:bg-palm-50/40">
-                <div className="flex items-center justify-between gap-3"><div className="min-w-0"><strong className="block truncate">{shipment.fromCity} ← {shipment.toCity}</strong><p className="mt-1 text-xs text-slate-500">{shipment.refCode} · التسليم {formatDate(shipment.requestedDeliveryAt)}</p></div><StatusBadge status={shipment.status} /></div>
+                <div className="flex items-center justify-between gap-3"><div className="min-w-0"><strong className="block truncate">{shipment.fromCity} ← {shipment.toCity}</strong><p className="mt-1 text-xs text-slate-500">{shipment.refCode} · وقت المرسل {formatDate(shipment.requestedDeliveryAt)}</p></div><StatusBadge status={shipment.status} /></div>
                 <div className="mt-3 flex items-center gap-4 text-xs font-semibold text-slate-500"><span>{shipment.weightKg.toString()} كجم</span><span>{shipment.offers.filter((offer) => offer.status === "PENDING").length} عروض</span><ArrowLeft aria-hidden="true" className="mr-auto text-palm-600 transition group-hover:-translate-x-1" size={16} /></div>
               </Link>
             )) : <Empty text="لم تنشئ أي طلب شحن بعد" href="/shipments/new" action="أنشئ أول عُهدة" />}
@@ -127,7 +132,7 @@ export default async function DashboardPage() {
         </section>
 
         <section className="card">
-          <SectionHeading title="رحلاتي" href="/trips/new" action="رحلة جديدة" />
+          <SectionHeading title="رحلاتي القادمة" href="/trips/new" action="رحلة جديدة" />
           <div className="space-y-3">
             {trips.length ? trips.map((trip) => (
               <Link href={`/trips/${trip.id}`} key={trip.id} className="group block rounded-2xl border border-slate-200 p-4 transition hover:border-palm-500 hover:bg-palm-50/40">
@@ -135,7 +140,7 @@ export default async function DashboardPage() {
                 <p className="mt-2 text-xs text-slate-500">{trip.airline} · {formatDate(trip.departureAt)}</p>
                 <div className="mt-3 flex items-center justify-between text-xs font-semibold text-palm-700"><span>{trip.offers.length} عروض مقدمة</span><ArrowLeft aria-hidden="true" className="transition group-hover:-translate-x-1" size={16} /></div>
               </Link>
-            )) : <Empty text="أضف رحلتك لنبحث عن عُهد مناسبة" href="/trips/new" action="إضافة رحلة" />}
+            )) : <Empty text="لا توجد رحلة قادمة مفتوحة. أضف رحلة لنبحث لك عن عُهد مناسبة" href="/trips/new" action="إضافة رحلة" />}
           </div>
         </section>
       </div>

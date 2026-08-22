@@ -18,7 +18,7 @@ export function initSentry() {
       replaysSessionSampleRate: 0.1,
       replaysOnErrorSampleRate: 1.0,
 
-      beforeSend(event: any) {
+      beforeSend(event: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
         if (event.exception) {
           const error = event.exception.values?.[0];
           if (error?.type === "RequestBodyTooLargeError") {

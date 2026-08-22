@@ -25,7 +25,7 @@ function getFirebaseApp(): any {
     };
 
     app = admin.initializeApp({
-      credential: admin.credential.cert(credentials),
+      credential: (admin as any).credential.cert(credentials),
     });
 
     return app;
@@ -54,7 +54,7 @@ export async function sendPushNotification(
       token: deviceToken,
     };
 
-    await admin.messaging(fbApp).send(message);
+    await (admin as any).messaging(fbApp).send(message);
     return true;
   } catch (error) {
     console.error("Failed to send push notification:", error);
@@ -80,7 +80,7 @@ export async function sendMulticastNotification(
       data: data || {},
     };
 
-    const response = await admin.messaging(fbApp).sendMulticast({
+    const response = await (admin as any).messaging(fbApp).sendMulticast({
       ...message,
       tokens: deviceTokens,
     });
@@ -100,7 +100,7 @@ export async function unsubscribeFromTopic(deviceTokens: string[], topic: string
   if (!fbApp) return;
 
   try {
-    await admin.messaging(fbApp).unsubscribeFromTopic(deviceTokens, topic);
+    await (admin as any).messaging(fbApp).unsubscribeFromTopic(deviceTokens, topic);
   } catch (error) {
     console.error("Failed to unsubscribe from topic:", error);
   }
@@ -111,7 +111,7 @@ export async function subscribeToTopic(deviceTokens: string[], topic: string) {
   if (!fbApp) return;
 
   try {
-    await admin.messaging(fbApp).subscribeToTopic(deviceTokens, topic);
+    await (admin as any).messaging(fbApp).subscribeToTopic(deviceTokens, topic);
   } catch (error) {
     console.error("Failed to subscribe to topic:", error);
   }

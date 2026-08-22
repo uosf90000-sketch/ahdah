@@ -78,7 +78,7 @@ export async function notifyShipmentCreated(shipmentId: string): Promise<void> {
   });
 }
 
-export async function notifyOfferReceived(shipmentId: string, senderId: string): Promise<void> {
+export async function notifyOfferReceived(shipmentId: string): Promise<void> {
   const shipment = await db.shipment.findUnique({
     where: { id: shipmentId },
     select: { senderId: true, refCode: true },

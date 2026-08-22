@@ -30,7 +30,7 @@ export function initSentry() {
   }
 }
 
-export function captureException(error: unknown, context?: Record<string, any>) {
+export function captureException(error: unknown, context?: Record<string, unknown>) {
   if (context) {
     Sentry.setContext("additional", context);
   }

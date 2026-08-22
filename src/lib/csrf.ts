@@ -1,8 +1,7 @@
-import { createHash, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 
 const CSRF_COOKIE = "ahdah_csrf";
-const CSRF_HEADER = "x-csrf-token";
 
 export function generateCsrfToken(): string {
   return randomBytes(32).toString("hex");

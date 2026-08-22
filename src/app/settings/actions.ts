@@ -18,3 +18,4 @@ export async function deleteAccountAction(formData: FormData) {
   }
   redirect(`/auth?success=${encodeURIComponent("تم حذف حسابك وبياناته المرتبطة")}`);
 }
+

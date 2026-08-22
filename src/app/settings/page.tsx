@@ -93,3 +93,4 @@ function PermissionHint({ Icon, title, text }: { Icon: typeof Camera; title: str
 function PolicyLink({ href, label }: { href: string; label: string }) {
   return <Link href={href} className="flex min-h-14 items-center justify-between py-3 font-bold text-ink transition hover:text-palm-700"><span className="flex items-center gap-2"><FileText size={17} className="text-palm-600" />{label}</span><ChevronLeft size={17} /></Link>;
 }
+

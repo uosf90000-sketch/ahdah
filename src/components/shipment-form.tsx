@@ -110,3 +110,4 @@ export function ShipmentForm({ minDate }: { minDate: string }) {
     </form>
   );
 }
+

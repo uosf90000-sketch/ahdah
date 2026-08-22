@@ -89,3 +89,4 @@ function createMessagingAdapter(): MessagingAdapter {
 }
 
 export const messagingAdapter: MessagingAdapter = createMessagingAdapter();
+

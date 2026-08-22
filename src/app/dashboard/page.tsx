@@ -154,3 +154,4 @@ function SectionHeading({ title, href, action }: { title: string; href: string; 
 function Empty({ text, href, action }: { text: string; href: string; action: string }) {
   return <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-7 text-center"><p className="muted mb-4">{text}</p><Link className="btn-secondary" href={href}>{action}</Link></div>;
 }
+

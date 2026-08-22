@@ -17,3 +17,4 @@ export function Logo({ compact = false }: { compact?: boolean }) {
     </Link>
   );
 }
+

@@ -306,3 +306,4 @@ export const shipmentDetailInclude = Prisma.validator<Prisma.ShipmentInclude>()(
   ratings: true,
   payment: true,
 });
+

@@ -244,3 +244,4 @@ export async function notifyAcceptedTraveler(shipmentId: string, payload: PushPa
     console.error("traveler notification skipped", { error: error instanceof Error ? error.message : "unknown" });
   }
 }
+

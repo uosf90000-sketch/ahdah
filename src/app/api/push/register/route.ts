@@ -53,3 +53,4 @@ export async function DELETE(request: Request) {
     return Response.json({ error: "تعذر إلغاء تسجيل الجهاز" }, { status: 500, headers: noStore });
   }
 }
+

@@ -41,3 +41,4 @@ export function SaudiPlaceInput({ id, name, label, value, onChange, required = t
     </div>
   );
 }
+

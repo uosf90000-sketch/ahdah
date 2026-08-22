@@ -30,3 +30,4 @@ export function StarRatingField({ name = "score", defaultValue = 5 }: { name?: s
     </div>
   );
 }
+

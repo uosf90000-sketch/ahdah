@@ -37,3 +37,4 @@ export function LegalSection({ title, children }: { title: string; children: Rea
     </section>
   );
 }
+

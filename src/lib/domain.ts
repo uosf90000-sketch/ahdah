@@ -227,3 +227,4 @@ export function formatMoney(value: number | string | { toString(): string }) {
 export function formatDate(value: Date | string) {
   return new Intl.DateTimeFormat("ar-SA", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }
+

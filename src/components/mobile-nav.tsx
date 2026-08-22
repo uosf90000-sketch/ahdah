@@ -6,3 +6,4 @@ export async function MobileNav() {
   if (!user) return null;
   return <MobileNavClient />;
 }
+

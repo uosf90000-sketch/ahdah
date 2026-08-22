@@ -28,3 +28,4 @@ export async function sanitizeImageBuffer(type: string, bytes: Buffer) {
   if (type === "image/webp") return image.webp({ quality: 88 }).toBuffer();
   throw new Error("Unsupported image type");
 }
+

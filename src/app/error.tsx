@@ -14,3 +14,4 @@ export default function GlobalError({ reset }: { error: Error & { digest?: strin
     </div>
   );
 }
+

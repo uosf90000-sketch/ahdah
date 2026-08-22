@@ -101,3 +101,4 @@ export async function updateChatLocation(
     db.chatMessage.create({ data: { shipmentId, senderId: userId, body: `📍 تم تحديد موقع ${label}` } }),
   ]);
 }
+

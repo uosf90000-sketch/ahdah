@@ -11,3 +11,4 @@ class MockPaymentAdapter implements PaymentAdapter {
 }
 
 export const paymentAdapter: PaymentAdapter = new MockPaymentAdapter();
+

@@ -76,6 +76,7 @@ model User {
   updatedAt       DateTime        @updatedAt
   sessions        Session[]
   pushDevices     PushDevice[]
+  notifications   Notification[]
   sentShipments   Shipment[]      @relation("ShipmentSender")
   trips           Trip[]
   offers          Offer[]
@@ -275,4 +276,28 @@ model ChatMessage {
 
   @@index([shipmentId, createdAt])
   @@index([senderId, createdAt])
+}
+
+enum NotificationType {
+  SHIPMENT_CREATED
+  OFFER_RECEIVED
+  OFFER_ACCEPTED
+  MESSAGE_RECEIVED
+  DELIVERY_READY
+  DELIVERY_COMPLETED
+  RATING_RECEIVED
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String
+  data      Json             @default("{}")
+  sentAt    DateTime
+  createdAt DateTime         @default(now())
+
+  @@index([userId, createdAt])
 }

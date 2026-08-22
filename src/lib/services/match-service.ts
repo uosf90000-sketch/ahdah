@@ -44,3 +44,4 @@ export async function getTravelerMatchesForTrip(tripId: string, travelerId: stri
 
   return candidates.filter((shipment) => tripMatchesShipment(trip, shipment));
 }
+

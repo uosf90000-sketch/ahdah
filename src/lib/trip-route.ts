@@ -116,3 +116,4 @@ export function tripMatchesShipment(trip: TripRouteLike, shipment: ShipmentRoute
   const modes = transportModesBetween(trip, pickupIndex, deliveryIndex);
   return modes.length > 0 && modes.every((mode) => mode === preference);
 }
+

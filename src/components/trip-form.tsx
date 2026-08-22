@@ -111,3 +111,4 @@ export function TripForm({ minDate }: { minDate: string }) {
     </form>
   );
 }
+

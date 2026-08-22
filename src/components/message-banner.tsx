@@ -11,3 +11,4 @@ export function MessageBanner({ error, success }: { error?: string; success?: st
     </div>
   );
 }
+

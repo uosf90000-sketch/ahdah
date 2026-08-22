@@ -37,3 +37,4 @@ export function getPublicOrigin(request: NextRequest) {
 
   return DEFAULT_PUBLIC_ORIGIN;
 }
+

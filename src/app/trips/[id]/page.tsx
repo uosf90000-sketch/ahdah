@@ -106,3 +106,4 @@ export default async function TripDetailPage({ params, searchParams }: { params:
 function Fact({ Icon, label, value }: { Icon: typeof Plane; label: string; value: string }) {
   return <div className="rounded-2xl border border-white/10 bg-white/[.08] p-4"><Icon className="mb-3 text-blue-200" size={18} /><p className="text-[11px] font-medium text-slate-300">{label}</p><p className="mt-1 text-sm font-bold">{value}</p></div>;
 }
+

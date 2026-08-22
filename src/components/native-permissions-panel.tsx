@@ -116,3 +116,4 @@ function normalizePermission(value: string | undefined): PermissionState {
   if (value === "prompt" || value === "prompt-with-rationale") return "prompt";
   return "unknown";
 }
+

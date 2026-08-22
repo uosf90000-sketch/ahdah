@@ -238,3 +238,4 @@ function ratingAggregate(average: number | null, count: number) {
   if (!count || average === null) return "جديد بلا تقييم";
   return `★ ${average.toFixed(1)} (${count})`;
 }
+

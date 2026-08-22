@@ -75,6 +75,7 @@ export async function getCurrentUser() {
     },
   });
   if (!session || session.expiresAt <= new Date()) return null;
+  if (!session.user) return null;
   return session.user;
 }
 
@@ -83,3 +84,4 @@ export async function requireUser() {
   if (!user) redirect("/auth?error=" + encodeURIComponent("سجّل الدخول أولًا للمتابعة"));
   return user;
 }
+

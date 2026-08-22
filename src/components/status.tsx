@@ -25,3 +25,4 @@ export function StatusTimeline({ current }: { current: ShipmentStatusName }) {
     </ol>
   );
 }
+

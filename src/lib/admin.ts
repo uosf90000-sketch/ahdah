@@ -31,3 +31,4 @@ export async function requireAdmin() {
   if (!isAdminIdentity(user)) redirect("/dashboard");
   return user;
 }
+

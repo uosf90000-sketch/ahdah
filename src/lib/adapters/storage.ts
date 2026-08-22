@@ -51,3 +51,4 @@ class MockDatabaseStorageAdapter implements StorageAdapter {
 }
 
 export const storageAdapter: StorageAdapter = new MockDatabaseStorageAdapter();
+

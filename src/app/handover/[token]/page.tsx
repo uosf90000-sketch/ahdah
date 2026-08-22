@@ -66,3 +66,4 @@ export default async function HandoverPage({ params, searchParams }: { params: P
     </div>
   );
 }
+

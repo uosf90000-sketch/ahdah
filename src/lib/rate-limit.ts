@@ -14,6 +14,13 @@ export async function clientAddress() {
   return (forwarded?.split(",")[0]?.trim() || "unknown").slice(0, 80);
 }
 
+export async function clientIdentifier(): Promise<string> {
+  const address = await clientAddress();
+  const requestHeaders = await headers();
+  const userAgent = (requestHeaders.get("user-agent") || "unknown").slice(0, 120);
+  return `${address}:${userAgent}`;
+}
+
 export function enforceRateLimit(key: string, maxAttempts: number, windowMs: number, message: string) {
   const now = Date.now();
   const current = buckets.get(key);
@@ -31,3 +38,4 @@ export function enforceRateLimit(key: string, maxAttempts: number, windowMs: num
     }
   }
 }
+

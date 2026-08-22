@@ -26,3 +26,4 @@ export default async function NewTripPage({ searchParams }: { searchParams: Prom
     </div>
   );
 }
+

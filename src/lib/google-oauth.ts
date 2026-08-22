@@ -88,3 +88,4 @@ export async function exchangeGoogleCode(input: { code: string; verifier: string
 
   return { ...profile, email: profile.email.trim().toLowerCase() };
 }
+

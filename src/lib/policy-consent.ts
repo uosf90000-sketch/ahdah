@@ -5,3 +5,4 @@ export const POLICY_CONSENT_MAX_AGE = 10 * 60;
 export function policyConsentAccepted(formData: FormData) {
   return formData.get("acceptPolicies") === "on";
 }
+

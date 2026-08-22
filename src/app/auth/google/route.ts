@@ -37,3 +37,4 @@ export async function GET(request: NextRequest) {
     return authError(request, "تعذر بدء تسجيل الدخول باستخدام Google");
   }
 }
+

@@ -62,3 +62,4 @@ export async function updateChatLocationAction(formData: FormData) {
 
   redirect(destination);
 }
+

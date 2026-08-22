@@ -45,3 +45,4 @@ export default async function NewShipmentPage({ searchParams }: { searchParams: 
 function Tip({ Icon, text, warning = false }: { Icon: typeof Camera; text: string; warning?: boolean }) {
   return <li className="flex items-start gap-3"><Icon aria-hidden="true" className={`mt-0.5 shrink-0 ${warning ? "text-sand-500" : "text-palm-600"}`} size={18} />{text}</li>;
 }
+

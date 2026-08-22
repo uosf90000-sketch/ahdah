@@ -87,3 +87,4 @@ export function ChatLocationControls({
 function mapsHref(lat: number, lng: number) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`;
 }
+

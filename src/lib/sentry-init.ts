@@ -2,7 +2,8 @@ import * as Sentry from "@sentry/nextjs";
 
 export function initSentry() {
   if (process.env.SENTRY_DSN) {
-    Sentry.init({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const config: any = {
       dsn: process.env.SENTRY_DSN,
       environment: process.env.NODE_ENV,
       tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
@@ -17,22 +18,18 @@ export function initSentry() {
       replaysSessionSampleRate: 0.1,
       replaysOnErrorSampleRate: 1.0,
 
-      beforeSend(event: unknown) {
-        if (typeof event === "object" && event !== null && "exception" in event) {
-          const exc = (event as Record<string, unknown>).exception;
-          if (exc && typeof exc === "object" && "values" in exc) {
-            const values = (exc as Record<string, unknown>).values;
-            if (Array.isArray(values) && values[0]) {
-              const error = values[0] as Record<string, unknown>;
-              if (error.type === "RequestBodyTooLargeError") {
-                return null;
-              }
-            }
+      beforeSend(event: any) {
+        if (event.exception) {
+          const error = event.exception.values?.[0];
+          if (error?.type === "RequestBodyTooLargeError") {
+            return null;
           }
         }
         return event;
       },
-    });
+    };
+
+    Sentry.init(config);
   }
 }
 

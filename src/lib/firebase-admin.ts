@@ -1,8 +1,9 @@
-import * as admin from "firebase-admin";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import admin from "firebase-admin";
 
-let app: admin.app.App | null = null;
+let app: any = null;
 
-function getFirebaseApp(): admin.app.App | null {
+function getFirebaseApp(): any {
   if (!process.env.FIREBASE_PROJECT_ID) {
     console.warn("Firebase not configured - FIREBASE_PROJECT_ID missing");
     return null;
@@ -24,7 +25,7 @@ function getFirebaseApp(): admin.app.App | null {
     };
 
     app = admin.initializeApp({
-      credential: admin.credential.cert(credentials as admin.ServiceAccount),
+      credential: admin.credential.cert(credentials),
     });
 
     return app;
